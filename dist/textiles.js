@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.min.js';
-import {detailTextures} from './detail-textures.js?v=7';
+import {detailTextures} from './detail-textures.js?v=8';
 const cache=new Map(),variantIndex={floral:0,gingham:1,stars:2,damask:3,linen:4};
 export function textileMaterial(variant='floral'){
  if(cache.has(variant))return cache.get(variant);

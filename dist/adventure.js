@@ -1,9 +1,9 @@
 import * as T from './vendor/three.module.min.js';
-import {places,createTown,animateTown} from './town.js?v=7';
-import {createInterior,walkRoom,animateInterior} from './interiors.js?v=7';
-import {FishingGame,fishSpecies,fishingSpots,createFishingRig,animateFishingRig} from './fishing.js?v=7';
-import {greetResident} from './residents.js?v=7';
-import {applySeason} from './models.js?v=7';
+import {places,createTown,animateTown} from './town.js?v=8';
+import {createInterior,walkRoom,animateInterior} from './interiors.js?v=8';
+import {FishingGame,fishSpecies,fishingSpots,createFishingRig,animateFishingRig} from './fishing.js?v=8';
+import {greetResident} from './residents.js?v=8';
+import {applySeason} from './models.js?v=8';
 
 export function createAdventure({scene,outdoor,camera,state,goTo,captureView,notify,getClimate,getTime,setIndoor,clearSelection}){
  const $=id=>document.getElementById(id),town=createTown(outdoor),game=new FishingGame(),rig=createFishingRig(outdoor);

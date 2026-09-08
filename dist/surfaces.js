@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.min.js';
-import {detailTextures} from './detail-textures.js?v=7';
+import {detailTextures} from './detail-textures.js?v=8';
 const pixel=new Uint8Array([150,150,150,255]);
 const fallback=new T.DataTexture(pixel,1,1,T.RGBAFormat);fallback.needsUpdate=true;
 const atlasUniform={value:fallback},readyUniform={value:0},wetUniform={value:0};
@@ -135,7 +135,7 @@ export function finishMaterial(mat,kind){
  return mat;
 }
 export async function loadArtTextures(renderer){
- const atlas=await new T.TextureLoader().loadAsync(new URL('./assets/handpaint-atlas.png',import.meta.url).href);
+ const atlas=await new T.TextureLoader().loadAsync(new URL('./assets/handpaint-atlas.webp',import.meta.url).href);
  atlas.colorSpace=T.NoColorSpace;atlas.generateMipmaps=true;atlas.minFilter=T.LinearMipmapLinearFilter;atlas.magFilter=T.LinearFilter;atlas.anisotropy=Math.min(16,renderer.capabilities.getMaxAnisotropy());atlas.wrapS=T.ClampToEdgeWrapping;atlas.wrapT=T.ClampToEdgeWrapping;atlasUniform.value=atlas;readyUniform.value=1;return atlas;
 }
 export function updateSurfaceWeather(weather){wetUniform.value=weather==='rain'?1:0}

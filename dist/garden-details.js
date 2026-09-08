@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.min.js';
-import {seasonal,group,sphere,beam,compact} from './models.js?v=7';
+import {seasonal,group,sphere,beam,compact} from './models.js?v=8';
 
 function fernGeometry(){
  const pos=[],uv=[],idx=[];

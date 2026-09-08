@@ -1,12 +1,12 @@
 import * as T from './vendor/three.module.min.js';
-import {createBuilding,createIsland,applySeason,animateModel,disposeModel,seasonal,material} from './models.js?v=7';
-import {GameState,catalog,slots} from './state.js?v=7';
-import {createLife,animateLife,dressBuilding,animateCloth,reactTo} from './life.js?v=7';
-import {createSky,dayAmount} from './sky.js?v=7';
-import {loadArtTextures,updateSurfaceWeather,softParticles} from './surfaces.js?v=7';
-import {addFinesse,animateFinesse,finishBuilding,animateBuildingFine} from './finesse.js?v=7';
-import {createAdventure} from './adventure.js?v=7';
-import {loadDetailTextures,updateDetailWind} from './detail-textures.js?v=7';
+import {createBuilding,createIsland,applySeason,animateModel,disposeModel,seasonal,material} from './models.js?v=8';
+import {GameState,catalog,slots} from './state.js?v=8';
+import {createLife,animateLife,dressBuilding,animateCloth,reactTo} from './life.js?v=8';
+import {createSky,dayAmount} from './sky.js?v=8';
+import {loadArtTextures,updateSurfaceWeather,softParticles} from './surfaces.js?v=8';
+import {addFinesse,animateFinesse,finishBuilding,animateBuildingFine} from './finesse.js?v=8';
+import {createAdventure} from './adventure.js?v=8';
+import {loadDetailTextures,updateDetailWind} from './detail-textures.js?v=8';
 const $=id=>document.getElementById(id),canvas=$('world'),state=new GameState();
 const mobile=()=>innerWidth<=760;
 const seasonData={
@@ -21,7 +21,8 @@ let azimuth=.72,azimuthTarget=.72,elevation=.69,elevationTarget=.69,zoom=mobile(
 let renderer,fineQuality=true;function renderRatio(){return fineQuality?Math.min(mobile()?2:2.5,Math.max(1.75,(devicePixelRatio||1)*1.25)):Math.min(mobile()?1.25:1.5,devicePixelRatio||1);}
 try{renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});}catch(error){$('loading').hidden=true;$('renderError').hidden=false;throw error}
 renderer.setPixelRatio(renderRatio());renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
-await Promise.all([loadArtTextures(renderer),loadDetailTextures(renderer)]).catch(error=>console.warn('Some texture detail is unavailable.',error));
+// Render immediately with the existing procedural materials; add texture detail as it arrives.
+void Promise.all([loadArtTextures(renderer),loadDetailTextures(renderer)]).catch(error=>console.warn('Some texture detail is unavailable.',error));
 const scene=new T.Scene();scene.background=new T.Color('#c7e2e5');scene.fog=new T.Fog('#c7e2e5',65,145);const outdoorFog=scene.fog,outdoor=new T.Group();scene.add(outdoor);
 const camera=new T.OrthographicCamera(-12,12,10,-10,.1,240),target=new T.Vector3(0,.7,0),targetGoal=target.clone();scene.add(camera);const sky=createSky(camera);
 const hemisphere=new T.HemisphereLight('#e6f1f4','#b2ad98',2.2);scene.add(hemisphere);

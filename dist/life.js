@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.min.js';
-import {material,seasonal,compact} from './models.js?v=7';
-import {softParticles} from './surfaces.js?v=7';
-import {resident,animateResident,poseFishing} from './residents.js?v=7';
+import {material,seasonal,compact} from './models.js?v=8';
+import {softParticles} from './surfaces.js?v=8';
+import {resident,animateResident,poseFishing} from './residents.js?v=8';
 const cube=new T.BoxGeometry(1,1,1),ball=new T.SphereGeometry(1,10,7);
 function mesh(p,g,c,x=0,y=0,z=0,sx=1,sy=1,sz=1){const m=new T.Mesh(g,typeof c==='string'?material(c):c);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;m.receiveShadow=true;p.add(m);return m}
 function box(p,x,y,z,w,h,d,c){return mesh(p,cube,c,x,y+h*.5,z,w,h,d)}
