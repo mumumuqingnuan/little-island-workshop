@@ -1,0 +1,39 @@
+# 潮汐小镇 · 四季物语
+
+一个使用 Three.js 制作的 3D 海岛小镇游戏。可以逛街、进入房屋、与居民互动、钓鱼、建造和升级设施，也可以切换四季、天气和昼夜。
+
+## 本地运行
+
+这是一个静态网页项目，游戏文件保存在 `dist/`，无需安装 npm 依赖或编译。电脑安装 Python 3 后，在仓库目录运行：
+
+```sh
+python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
+```
+
+然后在支持 WebGL 的浏览器打开 <http://127.0.0.1:8000>。游戏使用 JavaScript 模块，需要通过 HTTP 服务访问，不能直接双击 `index.html` 运行。
+
+## 玩法
+
+- 点击建筑标签探索地点，进入房屋后点击地板移动、点击家具互动。
+- 点击居民交谈，到海风码头等钓点抛竿；咬钩时提竿，按住收线、松手减压。
+- 打开“建造与升级”建造设施；选中建筑后可以升级，最多五阶。
+- 使用季节和天气面板切换四季、晴雨风雪及昼夜。
+- 拖动场景或使用方向键旋转，滚轮或加减按钮缩放；可切换精细／流畅画质。
+- 金币、建筑和鱼获进度保留在当前页面会话中，刷新页面会重新开始。
+
+## 文件结构
+
+- `dist/index.html`、`dist/style.css`：界面和样式。
+- `dist/game.js`、`dist/state.js`：游戏入口、状态和建设逻辑。
+- `dist/models.js`、`dist/town.js`、`dist/residents.js`、`dist/life.js`：岛屿、建筑与居民。
+- `dist/adventure.js`、`dist/interiors.js`、`dist/fishing.js`：探索、室内互动与钓鱼。
+- `dist/sky.js` 及其他细节模块：天空、材质、植物与布料效果。
+- `dist/assets/`：游戏材质贴图。
+- `dist/vendor/`：随项目提供的 Three.js 及其许可证。
+- `.openai/hosting.json`：原有 Sites 项目的部署配置，本地运行无需使用。
+
+## 版本来源
+
+游戏文件来自 Sites 保存的第 7 版，原始提交为 `d9657448037f99c3a69af8c04bff43d81d3d4489`。原游戏地址：<https://little-island-workshop.wendyrh.chatgpt.site/>（可能需要拥有者授权访问）。
+
+Three.js 的许可证保存在 `dist/vendor/THREE-LICENSE.txt`。
