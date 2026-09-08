@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const musicURL = new URL('island-canon-v2.m4a', document.currentScript.src).href;
+  const musicURL = new URL('island-canon-v3.m4a', document.currentScript.src).href;
   const audio = document.getElementById('islandMusic');
   const toggle = document.getElementById('musicToggle');
   const slider = document.getElementById('musicVolume');
@@ -29,7 +29,7 @@
     toggle.setAttribute('aria-pressed', String(wanted));
     toggle.setAttribute('aria-label', failed ? '重试播放背景音乐' : loading ? '取消加载背景音乐' : wanted ? '关闭背景音乐' : '开启背景音乐');
     toggle.setAttribute('aria-busy', String(loading));
-    status.textContent = failed ? '音乐暂未加载，请点击重试' : loading ? '配乐加载中，小岛可以继续玩' : playing ? '微风卡农 · 正在播放' : '微风卡农 · 轻柔变奏';
+    status.textContent = failed ? '音乐暂未加载，请点击重试' : loading ? '配乐加载中，小岛可以继续玩' : playing ? '微风卡农 · 正在播放' : '微风卡农 · 慢柔版';
   }
 
   function fail() {
