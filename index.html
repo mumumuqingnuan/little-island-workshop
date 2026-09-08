@@ -31,6 +31,8 @@
 <link rel="modulepreload" href="textiles.js?v=9">
 <link rel="modulepreload" href="town.js?v=9">
 <link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="../music.css?v=1">
+<script defer src="../music.js?v=1"></script>
 </head>
 <body>
 <main>
@@ -54,7 +56,13 @@
 <label class="cycle-label"><input type="checkbox" id="dayCycle" checked>自动昼夜<small>一天 3 分钟</small></label>
 <label class="cycle-label"><input type="checkbox" id="seasonCycle">让四季自动流转<small>每季 60 秒</small></label>
 </div></section>
-<div class="camera"><button id="left" aria-label="向左旋转">↶</button><button id="right" aria-label="向右旋转">↷</button><button id="zoomIn" aria-label="放大">＋</button><button id="zoomOut" aria-label="缩小">−</button><button id="qualityToggle" aria-label="切换画质，当前为精细" aria-pressed="true" title="精细画质：高分辨率、细致阴影。点击可切换流畅画质。">精细</button></div>
+<div class="camera"><button id="left" aria-label="向左旋转">↶</button><button id="right" aria-label="向右旋转">↷</button><button id="zoomIn" aria-label="放大">＋</button><button id="zoomOut" aria-label="缩小">−</button><button id="qualityToggle" aria-label="切换画质，当前为精细" aria-pressed="true" title="精细画质：高分辨率、细致阴影。点击可切换流畅画质。">精细</button>
+<section class="music-player" aria-label="小镇配乐">
+<button id="musicToggle" class="music-toggle" type="button" aria-label="开启背景音乐" aria-pressed="false">♫ 开启音乐</button>
+<label class="music-volume"><span>音量</span><input id="musicVolume" type="range" min="0" max="100" step="1" value="35" aria-label="背景音乐音量"></label>
+<p id="musicStatus" class="music-status" role="status" aria-live="polite">海风捎来的信 · 原创配乐</p>
+<audio id="islandMusic" preload="none" loop hidden></audio>
+</section></div>
 <aside id="detail" hidden aria-label="建筑详情"><button id="close" aria-label="关闭">×</button><small id="buildingCategory">小岛建筑</small><h2 id="buildingName"></h2><div id="stars" aria-label="建筑等级"></div><p id="buildingInfo"></p><p id="appearance"></p><button id="enterBuilding" class="primary">进入屋子</button><button id="upgrade" class="secondary"></button></aside>
 <div id="placeMarkers" aria-label="城镇地点"></div>
 <aside id="placePanel" hidden aria-label="地点详情"><button id="placeClose" class="panel-close" aria-label="关闭地点详情">×</button><small id="placeCategory"></small><h2 id="placeName"></h2><p id="placeInfo"></p><button id="placeEnter" class="primary">进入室内</button></aside>
