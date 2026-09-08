@@ -2,6 +2,7 @@
 .music-player{flex-basis:100%;display:grid;grid-template-columns:1fr auto;align-items:center;gap:3px 8px;padding:7px 9px;background:var(--paper);border:1px solid #fff9;border-radius:10px;box-shadow:0 4px 18px #344e5615}
 .camera .music-toggle{width:auto;height:30px;padding:0 6px;font-size:12px;white-space:nowrap;box-shadow:none;background:transparent;text-align:left}
 .camera .music-toggle[aria-pressed=true]{color:var(--green)}
+.camera .music-toggle[data-awaiting-gesture=true]{background:#47705b;color:white;font-size:14px;font-weight:600;height:36px;padding:0 9px}
 .music-volume{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
 .music-volume input{width:65px;min-width:0;height:26px;margin:0;accent-color:var(--green);cursor:pointer}
 .music-status{grid-column:1/-1;margin:0 0 1px 6px;font-size:10px;line-height:1.5;color:var(--muted)}
