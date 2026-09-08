@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.min.js';
-import {material,seasonal,mesh,box,sphere,cylinder,cone,beam,group,roof,windowFrame,door,flowers,fence,tree,lamp,trimBox,compact,snow,animateModel,applySeason} from './models.js?v=8';
-import {cloth,lantern,stall,animateCloth} from './life.js?v=8';
-import {resident,animateResident,poseFishing,routePosition} from './residents.js?v=8';
+import {material,seasonal,mesh,box,sphere,cylinder,cone,beam,group,roof,windowFrame,door,flowers,fence,tree,lamp,trimBox,compact,snow,animateModel,applySeason} from './models.js?v=9';
+import {cloth,lantern,stall,animateCloth} from './life.js?v=9';
+import {resident,animateResident,poseFishing,routePosition} from './residents.js?v=9';
 
 export const places=[
  {id:'hall',name:'潮汐市政厅',kind:'hall',category:'钟楼广场',x:0,z:-10.5,scale:1.15,info:'钟楼、办事大厅、阅览区与办公桌。'},

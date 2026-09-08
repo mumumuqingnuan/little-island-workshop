@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.min.js';
-import {finishMaterial} from './surfaces.js?v=8';
+import {finishMaterial} from './surfaces.js?v=9';
 
 // Original, procedural miniature architecture. No game assets are used.
 const materials=new Map();
@@ -246,6 +246,9 @@ export function createIsland(slots){
  return root;
 }
 export function applySeason(root,season,weather){const isSnow=season==='winter'||weather==='snow';root.traverse(o=>{if(o.userData.snow)o.visible=isSnow;if(o.userData.seasonalFoliage)o.visible=!isSnow;});}
-export function animateModel(root,time,wind,dusk){root.traverse(o=>{if(o.userData.rotor)o.rotation.z=-time*(.45+wind*.45);if(o.userData.flag){o.rotation.y=Math.sin(time*3+o.position.y)*(.12+wind*.26);o.rotation.z=Math.sin(time*2.7)*.05}if(o.userData.sway){o.rotation.z=Math.sin(time*1.3+o.userData.phase)*(.025+wind*.095);o.rotation.x=Math.cos(time*.9+o.userData.phase)*(.018+wind*.055)}if(o.userData.lantern)o.userData.lantern.intensity=dusk*1.5});}
+const animatedModels=new WeakMap();
+export function animateModel(root,time,wind,dusk){
+ let moving=animatedModels.get(root);if(!moving){moving=[];root.traverse(o=>{if(o.userData.rotor||o.userData.flag||o.userData.sway||o.userData.lantern)moving.push(o)});animatedModels.set(root,moving)}
+ moving.forEach(o=>{if(o.userData.rotor)o.rotation.z=-time*(.45+wind*.45);if(o.userData.flag){o.rotation.y=Math.sin(time*3+o.position.y)*(.12+wind*.26);o.rotation.z=Math.sin(time*2.7)*.05}if(o.userData.sway){o.rotation.z=Math.sin(time*1.3+o.userData.phase)*(.025+wind*.095);o.rotation.x=Math.cos(time*.9+o.userData.phase)*(.018+wind*.055)}if(o.userData.lantern)o.userData.lantern.intensity=dusk*1.5});}
 export function disposeModel(root){root.traverse(o=>{if(o.isMesh&&!o.geometry.userData.shared&&![boxGeo,sphereGeo,icoGeo,tileGeo,pollenGeo].includes(o.geometry))o.geometry.dispose()})}
 export {mesh,box,sphere,cylinder,cone,beam,group,roof,windowFrame,door,flowers,fence,tree,lamp,trimBox,snow};

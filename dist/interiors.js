@@ -1,8 +1,8 @@
 import * as T from './vendor/three.module.min.js';
-import {material,seasonal,box,sphere,cylinder,beam,group,windowFrame,flowers,compact,mesh,disposeModel} from './models.js?v=8';
-import {resident,animateResident} from './residents.js?v=8';
-import {dressBed,dressCushion,textileMaterial} from './textiles.js?v=8';
-import {contact} from './finesse.js?v=8';
+import {material,seasonal,box,sphere,cylinder,beam,group,windowFrame,flowers,compact,mesh,disposeModel} from './models.js?v=9';
+import {resident,animateResident} from './residents.js?v=9';
+import {dressBed,dressCushion,textileMaterial} from './textiles.js?v=9';
+import {contact} from './finesse.js?v=9';
 
 // Walkable cutaway rooms. Furniture keeps separate hit targets and collision bounds.
 export function createInterior(parent,place){

@@ -1,8 +1,8 @@
 import * as T from './vendor/three.module.min.js';
-import {seasonal,material} from './models.js?v=8';
-import {softParticles} from './surfaces.js?v=8';
-import {places} from './town.js?v=8';
-import {gardenDetails,animateGarden} from './garden-details.js?v=8';
+import {seasonal,material} from './models.js?v=9';
+import {softParticles} from './surfaces.js?v=9';
+import {places} from './town.js?v=9';
+import {gardenDetails,animateGarden} from './garden-details.js?v=9';
 const shadowMat=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv;void main(){float d=length((vUv-.5)*2.);float a=exp(-d*d*4.)*.27*(1.-smoothstep(.65,1.,d));gl_FragColor=vec4(.18,.25,.23,a);}'});
 const plane=new T.PlaneGeometry(1,1);
 export function contact(root,x,y,z,w,d){const m=new T.Mesh(plane,shadowMat);m.rotation.x=-Math.PI/2;m.position.set(x,y,z);m.scale.set(w,d,1);root.add(m);return m}

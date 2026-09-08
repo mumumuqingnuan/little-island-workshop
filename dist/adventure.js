@@ -1,13 +1,14 @@
 import * as T from './vendor/three.module.min.js';
-import {places,createTown,animateTown} from './town.js?v=8';
-import {createInterior,walkRoom,animateInterior} from './interiors.js?v=8';
-import {FishingGame,fishSpecies,fishingSpots,createFishingRig,animateFishingRig} from './fishing.js?v=8';
-import {greetResident} from './residents.js?v=8';
-import {applySeason} from './models.js?v=8';
+import {places,createTown,animateTown} from './town.js?v=9';
+import {createInterior,walkRoom,animateInterior} from './interiors.js?v=9';
+import {FishingGame,fishSpecies,fishingSpots,createFishingRig,animateFishingRig} from './fishing.js?v=9';
+import {greetResident} from './residents.js?v=9';
+import {applySeason} from './models.js?v=9';
 
 export function createAdventure({scene,outdoor,camera,state,goTo,captureView,notify,getClimate,getTime,setIndoor,clearSelection}){
  const $=id=>document.getElementById(id),town=createTown(outdoor),game=new FishingGame(),rig=createFishingRig(outdoor);
  let room=null,selected=null,fishingOpen=false,returnView=null,lastPhase='',lastUi=-1;
+ const roomCache=new Map(); // Keep only two recently visited rooms to bound GPU memory.
  const markers=[];for(const p of places){const el=document.createElement('button');el.type='button';el.className='place-marker';el.textContent=p.name;el.setAttribute('aria-label',`前往${p.name}`);el.onclick=()=>visit(p);$('placeMarkers').appendChild(el);markers.push({el,p});}
  const directory=$('directoryList');for(const p of places){const row=document.createElement('button');row.type='button';row.className='destination';row.innerHTML=`<span><small>${p.category}</small><strong>${p.name}</strong><em>${p.info}</em></span><b>前往</b>`;row.onclick=()=>{$('directory').close();visit(p);};directory.appendChild(row);}
  $('directoryOpen').onclick=()=>{$('directory').showModal();};$('directoryClose').onclick=()=>$('directory').close();
@@ -27,9 +28,9 @@ export function createAdventure({scene,outdoor,camera,state,goTo,captureView,not
  function closePanels(){clearSelection();$('placePanel').hidden=true;selected=null;}
  function visit(p){if(room)exit();if(fishingOpen)stopFishing();closePanels();selected=p;goTo([p.x,1,p.z],p.kind==='road'?1.5:p.kind==='fishing'?1.55:1.6,.33,.67);$('placeCategory').textContent=p.category;$('placeName').textContent=p.name;$('placeInfo').textContent=p.info;$('placeEnter').hidden=p.kind==='road';$('placeEnter').textContent=p.kind==='fishing'?'拿起钓竿':'进入室内';$('placePanel').hidden=false;}
  function enter(p){
-  if(room)exit();stopFishing();returnView=captureView();closePanels();room=createInterior(scene,p);setIndoor(true);goTo([0,.35,0],innerWidth<=760?1.52:1.74,.32,.86);document.body.classList.add('interior');$('roomPanel').hidden=false;$('roomName').textContent=p.name;$('roomKind').textContent=p.category||'小镇住宅';$('roomHint').textContent='点地板走动 · 点家具查看或使用';$('roomInfo').textContent='家具和生活用品都可以走近看看。';$('placeMarkers').hidden=true;
+  if(room)exit();stopFishing();returnView=captureView();closePanels();const cacheKey=[p.id,p.kind,p.name].join('|');room=roomCache.get(cacheKey);if(!room)room=createInterior(scene,p);roomCache.delete(cacheKey);roomCache.set(cacheKey,room);while(roomCache.size>2){const oldest=roomCache.keys().next().value;roomCache.get(oldest).dispose();roomCache.delete(oldest)}room.root.visible=true;setIndoor(true);goTo([0,.35,0],innerWidth<=760?1.52:1.74,.32,.86);document.body.classList.add('interior');$('roomPanel').hidden=false;$('roomName').textContent=p.name;$('roomKind').textContent=p.category||'小镇住宅';$('roomHint').textContent='点地板走动 · 点家具查看或使用';$('roomInfo').textContent='家具和生活用品都可以走近看看。';$('placeMarkers').hidden=true;
  }
- function exit(){if(!room)return;room.dispose();room=null;setIndoor(false);document.body.classList.remove('interior');$('roomPanel').hidden=true;$('placeMarkers').hidden=false;if(returnView)goTo(returnView.p,returnView.zoom,returnView.angle,returnView.elevation);returnView=null;}
+ function exit(){if(!room)return;room.root.visible=false;room.path=[];room.pending=null;room=null;setIndoor(false);document.body.classList.remove('interior');$('roomPanel').hidden=true;$('placeMarkers').hidden=false;if(returnView)goTo(returnView.p,returnView.zoom,returnView.angle,returnView.elevation);returnView=null;}
  function startFishing(spot='pier'){
   if(room)exit();closePanels();game.open(spot);fishingOpen=true;lastPhase='';rig.root.visible=true;document.body.classList.add('fishing');$('fishingPanel').hidden=false;const s=fishingSpots[spot];goTo([s.x,.3,s.z+1.3],innerWidth<=760?1.6:1.95,.45,.54);$('fishSpot').textContent=s.name;renderFishing();
  }
@@ -49,7 +50,7 @@ export function createAdventure({scene,outdoor,camera,state,goTo,captureView,not
  function handleResident(npc){if(npc.userData.fishingSpot){startFishing(npc.userData.fishingSpot);notify('可以开始抛竿了。');}else{const p=npc.getWorldPosition(new T.Vector3());npc.rotation.y=.33;goTo([p.x,.8,p.z],Math.max(2.35,captureView().zoom),.33,.68);notify(greetResident(npc,getTime()));}}
  town.npcs.slice(0,3).forEach((n,i)=>n.userData.fishingSpot=['pier','beach','rocks'][i]);
  function update(dt,time,wind,night,season,weather){
-  animateTown(town,time,wind,night,season,weather);animateInterior(room,time,state.paused?0:dt,night);
+  if(!room)animateTown(town,time,wind,night,season,weather);else town.lastTime=time;animateInterior(room,time,state.paused?0:dt,night);
   if(room&&room.pending&&room.path.length===0){const d=room.pending.userData.furniture;const text=d.action?d.action():d.text;$('roomInfo').textContent=`${d.label}：${text}`;room.pending=null;}
   if(fishingOpen){if(!state.paused&&!$('fishBook').open&&!$('directory').open)game.update(dt);animateFishingRig(rig,game,time);if(game.phase!==lastPhase){lastPhase=game.phase;renderFishing();}}
   if(time-lastUi>.07||state.paused){lastUi=time;if(fishingOpen)renderFishing();updateMarkers();}

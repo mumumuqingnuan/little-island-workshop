@@ -1,12 +1,12 @@
 import * as T from './vendor/three.module.min.js';
-import {createBuilding,createIsland,applySeason,animateModel,disposeModel,seasonal,material} from './models.js?v=8';
-import {GameState,catalog,slots} from './state.js?v=8';
-import {createLife,animateLife,dressBuilding,animateCloth,reactTo} from './life.js?v=8';
-import {createSky,dayAmount} from './sky.js?v=8';
-import {loadArtTextures,updateSurfaceWeather,softParticles} from './surfaces.js?v=8';
-import {addFinesse,animateFinesse,finishBuilding,animateBuildingFine} from './finesse.js?v=8';
-import {createAdventure} from './adventure.js?v=8';
-import {loadDetailTextures,updateDetailWind} from './detail-textures.js?v=8';
+import {createBuilding,createIsland,applySeason,animateModel,disposeModel,seasonal,material} from './models.js?v=9';
+import {GameState,catalog,slots} from './state.js?v=9';
+import {createLife,animateLife,dressBuilding,animateCloth,reactTo} from './life.js?v=9';
+import {createSky,dayAmount} from './sky.js?v=9';
+import {loadArtTextures,updateSurfaceWeather,softParticles} from './surfaces.js?v=9';
+import {addFinesse,animateFinesse,finishBuilding,animateBuildingFine} from './finesse.js?v=9';
+import {createAdventure} from './adventure.js?v=9';
+import {loadDetailTextures,updateDetailWind} from './detail-textures.js?v=9';
 const $=id=>document.getElementById(id),canvas=$('world'),state=new GameState();
 const mobile=()=>innerWidth<=760;
 const seasonData={
@@ -18,7 +18,8 @@ const seasonData={
 const weatherNames={sun:'晴天',cloud:'多云',wind:'起风',rain:'下雨',snow:'飘雪'};
 let season='spring',weather='wind',weatherChoice='wind',sunHour=16,autoDay=true,autoCycle=false,cycleElapsed=0,worldTime=0,last=performance.now(),nextUI=0;
 let azimuth=.72,azimuthTarget=.72,elevation=.69,elevationTarget=.69,zoom=mobile()?.44:.58,zoomTarget=zoom,toastTimer;
-let renderer,fineQuality=true;function renderRatio(){return fineQuality?Math.min(mobile()?2:2.5,Math.max(1.75,(devicePixelRatio||1)*1.25)):Math.min(mobile()?1.25:1.5,devicePixelRatio||1);}
+// Use the display's native resolution instead of forcing extra supersampling.
+let renderer,fineQuality=true;function renderRatio(){return Math.min(fineQuality?(mobile()?1.75:2):(mobile()?1.25:1.5),devicePixelRatio||1);}
 try{renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});}catch(error){$('loading').hidden=true;$('renderError').hidden=false;throw error}
 renderer.setPixelRatio(renderRatio());renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
 // Render immediately with the existing procedural materials; add texture detail as it arrives.
@@ -98,17 +99,22 @@ function updateLight(dt){
  return night;
 }
 function updateWeather(dt){
- const wind=weather==='wind'?1:weather==='rain'?.58:.15;updateDetailWind(worldTime,wind);for(const effect of [rain,snowFall,petals])effect.position.set(target.x,0,target.z);
+ const wind=weather==='wind'?1:weather==='rain'?.58:.15;updateDetailWind(worldTime,wind);const outside=!adventure.room;rain.visible=outside&&weather==='rain';snowFall.visible=outside&&weather==='snow';petals.visible=outside&&(season==='spring'||season==='autumn')&&weather!=='rain'&&weather!=='snow';if(!outside)return wind;for(const effect of [rain,snowFall,petals])effect.position.set(target.x,0,target.z);
  if(rain.visible){for(let i=0;i<rainCount;i++){const r=rainSeed[i],y=((r.y-worldTime*9*r.s)%15+15)%15,x=r.x+y*.12;const n=i*6;rainArray[n]=x;rainArray[n+1]=y;rainArray[n+2]=r.z;rainArray[n+3]=x-.11;rainArray[n+4]=y-.55;rainArray[n+5]=r.z}rainGeo.attributes.position.needsUpdate=true}
  if(snowFall.visible){for(let i=0;i<snowCount;i++){const r=snowSeed[i],n=i*3;snowArray[n]=r.x+Math.sin(worldTime*.5+r.z)*.65;snowArray[n+1]=((r.y-worldTime*.85*r.s)%15+15)%15;snowArray[n+2]=r.z+Math.cos(worldTime*.3+r.x)*.42}snowGeo.attributes.position.needsUpdate=true}
  if(petals.visible){for(let i=0;i<petalCount;i++){const r=snowSeed[i],n=i*3;petalArray[n]=((r.x+worldTime*(.25+wind*1.1)+10)%20+20)%20-10;petalArray[n+1]=.4+((r.y-worldTime*.16)%5+5)%5;petalArray[n+2]=r.z*.6+Math.sin(worldTime+i)*.15}petalGeo.attributes.position.needsUpdate=true}
  for(let i=0;i<shoreline.length;i++){const r=shoreline[i];r.scale.set(1+Math.sin(worldTime*.4+i)*.01,.83*(1+Math.sin(worldTime*.4+i)*.01),1)}
  return wind;
 }
-function resize(){
- renderer.setSize(innerWidth,innerHeight,false);const aspect=innerWidth/innerHeight,viewWidth=(mobile()?18.3:Math.max(22,aspect*16))/zoom;camera.left=-viewWidth/2;camera.right=viewWidth/2;camera.top=viewWidth/aspect/2;camera.bottom=-viewWidth/aspect/2;camera.updateProjectionMatrix();sky.resize(viewWidth,viewWidth/aspect);waterUniforms.uResolution.value.set(innerWidth*renderer.getPixelRatio(),innerHeight*renderer.getPixelRatio());snowMaterial.uniforms.pixelRatio.value=renderer.getPixelRatio();
+function updateProjection(){
+ const aspect=innerWidth/innerHeight,viewWidth=(mobile()?18.3:Math.max(22,aspect*16))/zoom;camera.left=-viewWidth/2;camera.right=viewWidth/2;camera.top=viewWidth/aspect/2;camera.bottom=-viewWidth/aspect/2;camera.updateProjectionMatrix();sky.resize(viewWidth,viewWidth/aspect);
 }
-function updateCamera(dt){const k=Math.min(1,dt*8);target.lerp(targetGoal,k);azimuth=T.MathUtils.lerp(azimuth,azimuthTarget,k);elevation=T.MathUtils.lerp(elevation,elevationTarget,k);if(Math.abs(zoom-zoomTarget)>.001){zoom=T.MathUtils.lerp(zoom,zoomTarget,k);resize()}
+function resize(){
+ const ratio=renderer.getPixelRatio();
+ if(canvas.width!==Math.floor(innerWidth*ratio)||canvas.height!==Math.floor(innerHeight*ratio))renderer.setSize(innerWidth,innerHeight,false);
+ updateProjection();waterUniforms.uResolution.value.set(innerWidth*ratio,innerHeight*ratio);snowMaterial.uniforms.pixelRatio.value=ratio;
+}
+function updateCamera(dt){const k=Math.min(1,dt*8);target.lerp(targetGoal,k);azimuth=T.MathUtils.lerp(azimuth,azimuthTarget,k);elevation=T.MathUtils.lerp(elevation,elevationTarget,k);if(Math.abs(zoom-zoomTarget)>.001){zoom=T.MathUtils.lerp(zoom,zoomTarget,k);updateProjection()}
  camera.position.set(target.x+Math.sin(azimuth)*45*Math.cos(elevation),target.y+45*Math.sin(elevation),target.z+Math.cos(azimuth)*45*Math.cos(elevation));camera.lookAt(target);camera.updateMatrixWorld();
 }
 function notify(text){$('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2600)}
@@ -157,10 +163,10 @@ canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();state.paused=t
 addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>last=performance.now());
 function frame(now){
  const dt=Math.min((now-last)/1000,.25);last=now;state.tick(dt);if(!state.paused){worldTime+=dt;cycleElapsed+=dt;if(autoDay)sunHour=(sunHour+dt*24/180)%24;if(autoCycle&&cycleElapsed>=60){const names=Object.keys(seasonData);season=names[(names.indexOf(season)+1)%4];cycleElapsed=0;refreshClimate()}if(weatherChoice==='auto'&&weather!==currentAutoWeather())refreshClimate()}
- updateCamera(dt);const dusk=updateLight(dt),wind=updateWeather(dt);waterUniforms.uTime.value=worldTime;sky.update(worldTime,sunHour,weather,wind);animateModel(island,worldTime,wind,dusk);animateLife(life,worldTime,wind,dusk,weather);animateFinesse(finesse,worldTime,wind,dusk,season,weather,life.actors);
+ updateCamera(dt);const dusk=updateLight(dt),wind=updateWeather(dt);waterUniforms.uTime.value=worldTime;if(!adventure.room){sky.update(worldTime,sunHour,weather,wind);animateModel(island,worldTime,wind,dusk);animateLife(life,worldTime,wind,dusk,weather);animateFinesse(finesse,worldTime,wind,dusk,season,weather,life.actors);
  for(const model of built.values()){animateModel(model,worldTime,wind,dusk);animateCloth(model,worldTime,wind);animateBuildingFine(model,worldTime,wind);if(model.userData.growing){const age=worldTime-model.userData.growStart;const s=age<.6?.84+.16*(1-Math.pow(1-age/.6,3)):1;model.scale.setScalar(s);if(age>=.6)model.userData.growing=false}}
  for(let i=bursts.length-1;i>=0;i--){const b=bursts[i],age=worldTime-b.start;if(age>1.8){outdoor.remove(b.m);b.m.geometry.dispose();b.m.material.dispose();bursts.splice(i,1);continue}const a=b.m.geometry.attributes.position.array;for(let j=0;j<60;j++){const angle=j*2.399;a[j*3]=Math.cos(angle)*age*(.3+j%4*.18);a[j*3+1]=age*(2+j%3*.35)-age*age*.75;a[j*3+2]=Math.sin(angle)*age*(.3+j%4*.18)}b.m.geometry.attributes.position.needsUpdate=true;b.m.material.opacity=1-age/1.8}
-
+ }
  adventure.update(dt,worldTime,wind,dusk,season,weather);renderer.render(scene,camera);if(now>=nextUI){updateUI();nextUI=now+140}requestAnimationFrame(frame);
 }
 refreshClimate();resize();updateCamera(1);updateLight(1);sky.update(0,sunHour,weather,1);animateLife(life,0,1,1-dayAmount(sunHour),weather);updateUI();if(mobile()){$('climateControls').hidden=true;$('climateToggle').textContent='展开';$('climateToggle').setAttribute('aria-expanded','false')}renderer.render(scene,camera);$('loading').style.opacity='0';setTimeout(()=>$('loading').hidden=true,450);requestAnimationFrame(frame);

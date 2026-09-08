@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.min.js';
-import {detailTextures} from './detail-textures.js?v=8';
+import {detailTextures} from './detail-textures.js?v=9';
 const pixel=new Uint8Array([150,150,150,255]);
 const fallback=new T.DataTexture(pixel,1,1,T.RGBAFormat);fallback.needsUpdate=true;
 const atlasUniform={value:fallback},readyUniform={value:0},wetUniform={value:0};
