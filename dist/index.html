@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#e8f2ec">
+<title>潮汐小镇 · 四季物语</title><meta name="description" content="在四季流转的海岛小镇逛街、进屋、和居民交谈，去海边钓鱼。">
+<link rel="stylesheet" href="style.css?v=7">
+</head>
+<body>
+<main>
+<canvas id="world" tabindex="0" aria-label="小岛场景，拖动或方向键旋转，滚轮或加减号缩放，回车选择建筑"></canvas>
+<div id="loading" role="status"><span class="loading-mark">✧</span><p>一阵风，把小岛带来了</p></div>
+<div id="renderError" hidden role="alert"><h2>小岛暂时无法显示</h2><p>请尝试用 Safari 或 Chrome 重新打开此页面。</p><button onclick="location.reload()">重新打开</button></div>
+<header>
+<div class="brand"><span class="brand-icon">✧</span><div><strong>潮汐小镇</strong><small>四 季 物 语</small></div></div>
+<button id="directoryOpen" class="quiet">地点</button><button id="fishBookOpen" class="quiet">鱼获手册</button>
+<div class="wallet"><span class="coin-icon">✦</span><div><small>岛屿金币</small><strong id="coins">120</strong></div><span id="income">+2 / 秒</span></div>
+<button id="pause" class="quiet" aria-label="暂停游戏">暂停</button>
+</header>
+<section class="quest"><span class="eyebrow" id="seasonCaption">SPRING · 春日来信</span><h1 id="questTitle">把日子，种成风景。</h1><p id="questText">建造 3 座设施，点亮远方的灯塔。</p><div class="progress"><i id="progress"></i></div></section>
+<section class="climate" aria-label="季节与天气">
+<div class="climate-heading"><span id="climateTitle">春 · 晴天</span><button id="climateToggle" aria-expanded="true" aria-controls="climateControls">收起</button></div>
+<div class="day-presets" role="group" aria-label="昼夜切换"><button id="dayButton" aria-pressed="true">☀ 白天</button><button id="nightButton" aria-pressed="false">☾ 夜晚</button></div>
+<div id="climateControls">
+<div class="seasons" role="group" aria-label="季节"><button data-season="spring" aria-pressed="true">春</button><button data-season="summer" aria-pressed="false">夏</button><button data-season="autumn" aria-pressed="false">秋</button><button data-season="winter" aria-pressed="false">冬</button></div>
+<label class="weather-label">天空<select id="weather"><option value="sun">☀ 晴天</option><option value="cloud">☁ 多云</option><option value="wind" selected>≋ 起风</option><option value="rain">☂ 下雨</option><option value="snow">❄ 飘雪</option><option value="auto">随季节变化</option></select></label>
+<label class="sun-label" for="sunTime"><span>时刻</span><output id="timeLabel">10:00</output></label><input type="range" id="sunTime" min="0" max="23.9" step="0.1" value="16" aria-label="一天中的时刻">
+<label class="cycle-label"><input type="checkbox" id="dayCycle" checked>自动昼夜<small>一天 3 分钟</small></label>
+<label class="cycle-label"><input type="checkbox" id="seasonCycle">让四季自动流转<small>每季 60 秒</small></label>
+</div></section>
+<div class="camera"><button id="left" aria-label="向左旋转">↶</button><button id="right" aria-label="向右旋转">↷</button><button id="zoomIn" aria-label="放大">＋</button><button id="zoomOut" aria-label="缩小">−</button><button id="qualityToggle" aria-label="切换画质，当前为精细" aria-pressed="true" title="精细画质：高分辨率、细致阴影。点击可切换流畅画质。">精细</button></div>
+<aside id="detail" hidden aria-label="建筑详情"><button id="close" aria-label="关闭">×</button><small id="buildingCategory">小岛建筑</small><h2 id="buildingName"></h2><div id="stars" aria-label="建筑等级"></div><p id="buildingInfo"></p><p id="appearance"></p><button id="enterBuilding" class="primary">进入屋子</button><button id="upgrade" class="secondary"></button></aside>
+<div id="placeMarkers" aria-label="城镇地点"></div>
+<aside id="placePanel" hidden aria-label="地点详情"><button id="placeClose" class="panel-close" aria-label="关闭地点详情">×</button><small id="placeCategory"></small><h2 id="placeName"></h2><p id="placeInfo"></p><button id="placeEnter" class="primary">进入室内</button></aside>
+<section id="roomPanel" hidden aria-label="室内探索"><button id="roomExit" class="quiet">← 返回小镇</button><small id="roomKind"></small><h2 id="roomName"></h2><p id="roomHint"></p><p id="roomInfo" role="status" aria-live="polite"></p></section>
+<section id="fishingPanel" hidden aria-label="钓鱼操作"><div class="panel-heading"><div><small>海边垂钓</small><h2 id="fishSpot"></h2></div><button id="fishClose" class="quiet" aria-label="收起钓竿">收竿</button></div><p id="fishMessage" role="status" aria-live="polite"></p><div id="fishMeters" hidden><label>鱼线张力 <output id="tensionValue">0%</output></label><div class="fishing-meter tension"><i id="tensionFill"></i></div><label>收线进度 <output id="catchValue">0%</output></label><div class="fishing-meter"><i id="catchFill"></i></div></div><div id="fishActions"><button id="fishAction" class="primary">抛竿</button><p class="fish-help">咬钩后提竿 · 按住收线，松开减压<br>电脑也可按住空格操作</p></div><div id="fishResult" hidden><strong id="fishCaught"></strong><div class="result-buttons"><button id="fishSell" class="primary">售出</button><button id="fishRelease" class="secondary">放生</button></div></div><button id="fishBookButton" class="book-button"><span id="fishCollection">鱼获手册 0 / 16</span> ›</button></section>
+<div id="toast" role="status" aria-live="polite"></div>
+<footer><nav class="tour" aria-label="小岛区域"><button data-view="all" aria-pressed="true">全岛</button><button data-view="civic" aria-pressed="false">钟楼广场</button><button data-view="market" aria-pressed="false">菜市场</button><button data-view="shops" aria-pressed="false">商业街</button><button data-view="homes" aria-pressed="false">居民巷</button><button data-view="coast" aria-pressed="false">海岸</button><button data-view="willow" aria-pressed="false">柳岸</button><button data-view="stars" aria-pressed="false">观星</button></nav><div class="footer-tools"><p class="hint">点建筑标签探索 · 点居民交谈 · 海岸可以钓鱼</p><button id="buildToggle" class="quiet" aria-expanded="false" aria-controls="buildDock">建造与升级</button></div><div class="dock" id="buildDock" hidden><button id="gather" class="gather"><span>✦</span><b>采集</b><small>+12 金币</small></button><div class="separator"></div><button data-build="garden"><span>❀</span><b>花圃</b><small>60 · +3/秒</small></button><button data-build="house"><span>⌂</span><b>小屋</b><small>120 · +7/秒</small></button><button data-build="mill"><span>✣</span><b>风车</b><small>220 · +14/秒</small></button><button data-build="lighthouse" id="lightButton"><span>♜</span><b>灯塔</b><small>建 3 座后解锁</small></button></div><p class="session">建筑可升级五阶 · 本次鱼获与建设进度在刷新后重新开始</p></footer>
+<dialog id="directory"><div class="dialog-heading"><div><small>潮汐小镇</small><h2>今天去哪里？</h2></div><button id="directoryClose" class="quiet" aria-label="关闭地点目录">×</button></div><div id="directoryList"></div></dialog>
+<dialog id="fishBook"><div class="dialog-heading"><div><small id="fishBookCount">已遇见 0 / 16 种</small><h2>海岛鱼获手册</h2></div><button id="fishBookClose" class="quiet" aria-label="关闭鱼获手册">×</button></div><p class="book-intro">三个钓点，各有不同的鱼。季节、天气和昼夜也会改变相遇的机会。</p><div id="fishBookList"></div></dialog>
+</main>
+<script type="module" src="game.js?v=7"></script>
+</body></html>
