@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const musicURL = new URL('island-canon-v3.m4a', document.currentScript.src).href;
+  const musicURL = new URL('island-canon-fast-v1.m4a', document.currentScript.src).href;
   const audio = document.getElementById('islandMusic');
   const toggle = document.getElementById('musicToggle');
   const slider = document.getElementById('musicVolume');
@@ -119,11 +119,19 @@
   });
   window.addEventListener('pagehide', () => { playbackAttempt++; audio.pause(); });
   window.addEventListener('pageshow', event => { if (event.persisted && wanted && !document.hidden) play(); });
-  // Start the request immediately; downloading never waits for autoplay permission.
-  audio.preload = 'auto';
-  audio.src = musicURL;
-  audio.load();
+  // Keep the startup bandwidth for the island; start music on its first frame.
   applyVolume();
   update();
-  if (!document.hidden) play();
+  const beginMusic = () => {
+    audio.preload = 'auto';
+    if (!audio.hasAttribute('src')) {
+      audio.src = musicURL;
+      audio.load();
+    }
+    if (wanted && !document.hidden) play();
+  };
+  const gameLoading = document.getElementById('loading');
+  if (gameLoading && !gameLoading.hidden && gameLoading.style.opacity !== '0') {
+    document.addEventListener('island-ready', beginMusic, {once: true});
+  } else beginMusic();
 })();
