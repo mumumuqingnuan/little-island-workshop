@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "潮汐小镇 · 四季物语",
+  "short_name": "潮汐小镇",
+  "description": "在小岛小镇探索、钓鱼、建造升级，感受四季和昼夜。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#dcece5",
+  "theme_color": "#e8f2ec",
+  "icons": [
+    {
+      "src": "./app-icon-192-v1.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./app-icon-512-v1.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

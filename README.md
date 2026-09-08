@@ -7,7 +7,7 @@
 这是一个静态网页项目，游戏文件保存在 `dist/`，无需安装 npm 依赖或编译。电脑安装 Python 3 后，在仓库目录运行：
 
 ```sh
-python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
+python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
 然后在支持 WebGL 的浏览器打开 <http://127.0.0.1:8000>。游戏使用 JavaScript 模块，需要通过 HTTP 服务访问，不能直接双击 `index.html` 运行。
@@ -29,6 +29,7 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 - `dist/adventure.js`、`dist/interiors.js`、`dist/fishing.js`：探索、室内互动与钓鱼。
 - `dist/sky.js` 及其他细节模块：天空、材质、植物与布料效果。
 - `dist/assets/`：游戏材质贴图。
+- `favicon.ico`、`app-icon-*.png`、`site.webmanifest`：浏览器图标与桌面／主屏幕快捷方式配置。
 - `dist/vendor/`：随项目提供的 Three.js 及其许可证。
 - `.openai/hosting.json`：原有 Sites 项目的部署配置，本地运行无需使用。
 
@@ -36,7 +37,9 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 
 提速版保留原画面分辨率，将三张 1254 × 1254 贴图转为 WebP（质量 90），总大小由 10,114,671 字节降至 1,886,530 字节，减少约 81%。原 PNG 保留在仓库中，游戏只请求 WebP。启动时先显示程序生成的基础材质，再异步补齐纹理；贴图慢或不可用时仍可进入游戏。入口预加载模块，减少逐层发现脚本带来的等待。
 
-部署时将 `dist/` 设为网站根目录，不需要构建命令。发布包可省略 `dist/assets/*.png` 原图；它们仅用于保留和重新生成贴图。所有游戏依赖随项目提供，不需要外部字体或脚本 CDN。GitHub Pages 的现有入口位于仓库根目录 `index.html`，直接加载 `dist/` 的资源，避免多一次页面跳转。
+部署时将仓库目录设为网站根目录，保留根目录的 `index.html`、`site.webmanifest`、`favicon.ico`、`app-icon-*.png` 和整个 `dist/`，不需要构建命令。发布包可省略 `dist/assets/handpaint-atlas.png`、`botanical-atlas-v6.png`、`textile-atlas-v6.png` 三张原始贴图，但必须保留 `app-icon-*.png` 图标。所有游戏依赖随项目提供，不需要外部字体或脚本 CDN。GitHub Pages 的入口位于仓库根目录 `index.html`，直接加载 `dist/` 的资源，避免多一次页面跳转。
+
+网页使用与游戏一致的和风小岛插画作为浏览器图标、Apple 主屏幕图标和 Web App Manifest 图标；快捷方式名称为“潮汐小镇”。从更新后的网页重新添加快捷方式后，支持这些配置的浏览器会使用新图标。已经保存的快捷方式可能保留旧图标，需要重新添加。此配置不提供离线游戏功能。
 
 2026-09-08 验证：JavaScript 语法和资源路径检查通过；在本地暂停全部贴图响应时，游戏已显示且可操作，恢复响应后贴图加载成功，并验证了咖啡店室内场景。文件体积改善不等同于大陆网络测速结果；托管线路仍需单独验证。
 
