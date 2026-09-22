@@ -43,3 +43,9 @@ html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 
 .save-bar{display:flex;align-items:center;justify-content:center;gap:12px;margin:4px 0 8px;color:var(--ink);font-size:11px}.save-bar .quiet{padding:7px 10px;font-size:12px;white-space:nowrap}.save-bar span{max-width:330px;text-align:left}.camera{bottom:200px}.build-open .camera{bottom:316px}
 @media(max-width:760px){.save-bar{gap:6px;font-size:10px}.save-bar span{flex:1}.camera,.build-open .camera{bottom:var(--camera-bottom,185px)}.interior .camera,.fishing .camera{bottom:max(12px,env(safe-area-inset-bottom));}}
+
+/* Leave the night sky and the wishing resident unobstructed. */
+.stargazing #placeMarkers{display:none}
+.stargazing .quest .progress{display:none}
+.stargazing #toast{bottom:calc(50% + 5px);max-width:min(440px,80vw);white-space:normal;line-height:1.7;text-align:center;background:#27384eee;color:#fff3d6;border-color:#e7d3a96b;z-index:12}
+@media(max-width:760px){.stargazing #toast{bottom:calc(50% + 10px);font-size:12px;padding:10px 14px;max-width:84vw;width:max-content}}
