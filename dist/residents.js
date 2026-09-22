@@ -109,18 +109,42 @@ export function animateResident(g,time,walking=false,wind=.3){
  d.stride=(d.stride||seed%19)+(walking?Math.min(distance,.2)*(d.character.child?13:10):0);
  const blend=d.walkBlend,phase=d.stride,bob=Math.abs(Math.sin(phase))*blend*.016+Math.sin(time*1.7+seed)*.003;
  d.legs.forEach((leg,i)=>{const step=Math.sin(phase+i*Math.PI);leg.rotation.x=step*.34*blend;leg.rotation.z=(i?1:-1)*.018*blend;d.knees[i].rotation.x=.025+Math.max(0,-step)*.58*blend;});
- const idle=(time+seed%31)%13,activity=d.idleActivity||['look','stretch','wave'][seed%3],gesture=!walking&&!active?Math.sin(Math.PI*Math.min(1,Math.max(0,(idle-2)/4))):0;
- d.arms.forEach((arm,i)=>{const step=Math.sin(phase+i*Math.PI);arm.position.y=arm.userData.baseY+bob;arm.rotation.set(-step*.24*blend+Math.sin(time*1.4+seed+i)*.025,0,arm.userData.side*(.06+.025*blend));d.forearms[i].rotation.set(-.18-Math.max(0,step)*.2*blend,0,0);d.hands[i].rotation.z=Math.sin(time*1.3+i)*.035;
-  if((active||(activity==='wave'&&gesture>.05))&&i===0){const amount=active?1:gesture;arm.rotation.x=-.25*amount;arm.rotation.z=-1.03*amount;d.forearms[i].rotation.z=-1.45*amount;d.hands[i].rotation.z=Math.sin(time*7)*.22*amount;}
+ const idle=(time+seed%31)%13,activity=d.idleActivity||['look','stretch','wave'][seed%3],wishing=d.wishUntil>time,gesture=!walking&&!active&&!wishing?Math.sin(Math.PI*Math.min(1,Math.max(0,(idle-2)/4))):0;
+ d.arms.forEach((arm,i)=>{const step=Math.sin(phase+i*Math.PI);arm.position.y=arm.userData.baseY+bob;arm.rotation.set(-step*.24*blend+Math.sin(time*1.4+seed+i)*.025,0,arm.userData.side*(.06+.025*blend));d.forearms[i].rotation.set(-.18-Math.max(0,step)*.2*blend,0,0);d.hands[i].rotation.set(0,0,Math.sin(time*1.3+i)*.035);
+  if(!wishing&&(active||(activity==='wave'&&gesture>.05))&&i===0){const amount=active?1:gesture;arm.rotation.x=-.25*amount;arm.rotation.z=-1.03*amount;d.forearms[i].rotation.z=-1.45*amount;d.hands[i].rotation.z=Math.sin(time*7)*.22*amount;}
   if(activity==='stretch'&&gesture>0){arm.rotation.z=arm.userData.side*(.06+gesture*.8);arm.rotation.x=-gesture*.6;d.forearms[i].rotation.x=-gesture*.9;}
  });
  d.body.position.y=bob;d.body.rotation.y=Math.sin(phase)*.055*blend;d.body.rotation.z=Math.sin(phase)*.025*blend;
- d.head.rotation.y=active?0:Math.sin(time*.65+seed)*(.09+(activity==='look'?gesture*.3:0));d.head.rotation.z=Math.sin(time*.6+seed)*.025;
+ d.head.rotation.x=0;d.head.rotation.y=active?0:Math.sin(time*.65+seed)*(.09+(activity==='look'?gesture*.3:0));d.head.rotation.z=Math.sin(time*.6+seed)*.025;
  const blink=(time+seed*.17)%4.9,open=blink<.15?.12+.88*Math.abs(blink-.075)/.075:1;d.eyes.forEach(e=>e.scale.y=open);
  if(d.skirt)d.skirt.rotation.z=Math.sin(phase)*.04*blend+Math.sin(time*1.4)*wind*.014;
  d.hair.forEach((h,i)=>{h.rotation.x=Math.sin(time*2.4+i+seed)*(.025+wind*.1+blend*.04);h.rotation.z=Math.sin(time*1.7+i)*.045;});
 }
 export function poseFishing(g,time=0){g.userData.arms.forEach((arm,i)=>{arm.rotation.x=-.7;arm.rotation.z=(i===0?-1:1)*.1;g.userData.forearms[i].rotation.x=-.72+Math.sin(time*1.2)*.025;g.userData.forearms[i].rotation.z=(i===0?-1:1)*.13;});}
+function wishArmPose(d,i){
+ // Solve the two real limb lengths so both palms meet in front of the chest.
+ const arm=d.arms[i],elbow=d.forearms[i],hand=d.hands[i],side=arm.userData.side;
+ const reach=new T.Vector3(side*.022-arm.position.x,-.071,.182),length=reach.length(),direction=reach.clone().normalize();
+ const upperLength=elbow.position.length(),lowerLength=hand.position.length(),along=(upperLength**2-lowerLength**2+length**2)/(2*length);
+ const bend=new T.Vector3(side*.55,-1,0);bend.addScaledVector(direction,-bend.dot(direction)).normalize();
+ const upper=direction.clone().multiplyScalar(along).addScaledVector(bend,Math.sqrt(Math.max(0,upperLength**2-along**2)));
+ const shoulder=new T.Quaternion().setFromUnitVectors(elbow.position.clone().normalize(),upper.clone().normalize());
+ const lower=reach.sub(upper).applyQuaternion(shoulder.clone().invert()).normalize();
+ const forearm=new T.Quaternion().setFromUnitVectors(hand.position.clone().normalize(),lower);
+ const palm=new T.Quaternion().setFromEuler(new T.Euler(0,-side*Math.PI/2,-side*.12));
+ palm.premultiply(shoulder.clone().multiply(forearm).invert());
+ return {shoulder,forearm,palm};
+}
+export function poseWish(g,time,start){
+ const elapsed=time-start;if(elapsed<0||elapsed>=5)return;
+ const d=g.userData,smooth=(a,b)=>T.MathUtils.smoothstep(elapsed,a,b),amount=smooth(0,1.1)*(1-smooth(3.8,5));
+ if(!d.wishPose)d.wishPose=d.arms.map((_,i)=>wishArmPose(d,i));
+ d.arms.forEach((arm,i)=>{const target=d.wishPose[i];arm.quaternion.slerp(target.shoulder,amount);d.forearms[i].quaternion.slerp(target.forearm,amount);d.hands[i].quaternion.slerp(target.palm,amount);});
+ // Notice the sky first, then close the eyes and bow into a quiet wish.
+ const bow=smooth(1.35,2.5),pitch=T.MathUtils.lerp(-.28,.16,bow);
+ d.head.rotation.x=T.MathUtils.lerp(d.head.rotation.x,pitch,amount);d.head.rotation.y*=1-amount;d.head.rotation.z*=1-amount;
+ const eyes=smooth(1.2,1.9)*(1-smooth(3.7,4.7));d.eyes.forEach(eye=>eye.scale.y=T.MathUtils.lerp(eye.scale.y,.08,eyes));
+}
 export function greetResident(g,time){const d=g.userData.resident;d.reactUntil=time+3.2;return `${d.name}：${d.lines[d.nextLine++%d.lines.length]}`;}
 export function routePosition(points,distance){
  const lengths=points.map((a,i)=>{const b=points[(i+1)%points.length];return Math.hypot(b[0]-a[0],b[1]-a[1]);}),total=lengths.reduce((a,b)=>a+b,0);let d=((distance%total)+total)%total;

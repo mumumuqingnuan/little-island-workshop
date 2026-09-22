@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.min.js';
-import {material,box,sphere,cylinder,beam,group,mesh,compact,disposeModel} from './models.js?v=9';
-import {resident,animateResident,poseFishing} from './residents.js?v=9';
+import {material,box,sphere,cylinder,beam,group,mesh,compact,disposeModel} from './models.js?v=18';
+import {resident,animateResident,poseFishing} from './residents.js?v=18';
 
 // These are game encounter settings, not a real fishing forecast.
 export const fishSpecies=[

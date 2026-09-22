@@ -1,9 +1,9 @@
 import * as T from './vendor/three.module.min.js';
-import {places,createTown,animateTown} from './town.js?v=9';
-import {createInterior,walkRoom,animateInterior} from './interiors.js?v=9';
-import {FishingGame,fishSpecies,fishingSpots,createFishingRig,animateFishingRig} from './fishing.js?v=9';
-import {greetResident} from './residents.js?v=9';
-import {applySeason} from './models.js?v=9';
+import {places,createTown,animateTown} from './town.js?v=18';
+import {createInterior,walkRoom,animateInterior} from './interiors.js?v=18';
+import {FishingGame,fishSpecies,fishingSpots,createFishingRig,animateFishingRig} from './fishing.js?v=18';
+import {greetResident} from './residents.js?v=18';
+import {applySeason} from './models.js?v=18';
 
 export function createAdventure({scene,outdoor,camera,state,goTo,captureView,notify,getClimate,getTime,setIndoor,clearSelection,onProgress=()=>{}}){
  const $=id=>document.getElementById(id),town=createTown(outdoor),game=new FishingGame(Math.random,()=>onProgress()),rig=createFishingRig(outdoor);
@@ -30,7 +30,7 @@ export function createAdventure({scene,outdoor,camera,state,goTo,captureView,not
  function enter(p){
   if(room)exit();stopFishing();returnView=captureView();closePanels();const cacheKey=[p.id,p.kind,p.name].join('|');room=roomCache.get(cacheKey);if(!room)room=createInterior(scene,p);roomCache.delete(cacheKey);roomCache.set(cacheKey,room);while(roomCache.size>2){const oldest=roomCache.keys().next().value;roomCache.get(oldest).dispose();roomCache.delete(oldest)}room.root.visible=true;setIndoor(true);goTo([0,.35,0],innerWidth<=760?1.52:1.74,.32,.86);document.body.classList.add('interior');$('roomPanel').hidden=false;$('roomName').textContent=p.name;$('roomKind').textContent=p.category||'小镇住宅';$('roomHint').textContent='点地板走动 · 点家具查看或使用';$('roomInfo').textContent='家具和生活用品都可以走近看看。';$('placeMarkers').hidden=true;
  }
- function exit(){if(!room)return;room.root.visible=false;room.path=[];room.pending=null;room=null;setIndoor(false);document.body.classList.remove('interior');$('roomPanel').hidden=true;$('placeMarkers').hidden=false;if(returnView)goTo(returnView.p,returnView.zoom,returnView.angle,returnView.elevation);returnView=null;}
+ function exit(){if(!room)return;room.root.visible=false;room.path=[];room.pending=null;room=null;setIndoor(false);document.body.classList.remove('interior');$('roomPanel').hidden=true;$('placeMarkers').hidden=false;if(returnView)goTo(returnView.p,returnView.zoom,returnView.angle,returnView.elevation,returnView.stargazing);returnView=null;}
  function startFishing(spot='pier'){
   if(room)exit();closePanels();game.open(spot);fishingOpen=true;lastPhase='';rig.root.visible=true;document.body.classList.add('fishing');$('fishingPanel').hidden=false;const s=fishingSpots[spot];goTo([s.x,.3,s.z+1.3],innerWidth<=760?1.6:1.95,.45,.54);$('fishSpot').textContent=s.name;renderFishing();
  }

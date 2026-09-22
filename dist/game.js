@@ -1,13 +1,13 @@
 import * as T from './vendor/three.module.min.js';
-import {createBuilding,createIsland,applySeason,animateModel,disposeModel,seasonal,material} from './models.js?v=9';
+import {createBuilding,createIsland,applySeason,animateModel,disposeModel,seasonal,material} from './models.js?v=18';
 import {SaveStore} from './save.js';
-import {GameState,catalog,slots} from './state.js?v=9';
-import {createLife,animateLife,dressBuilding,animateCloth,reactTo} from './life.js?v=9';
-import {createSky,dayAmount} from './sky.js?v=9';
-import {loadArtTextures,updateSurfaceWeather,softParticles} from './surfaces.js?v=9';
-import {addFinesse,animateFinesse,finishBuilding,animateBuildingFine} from './finesse.js?v=9';
-import {createAdventure} from './adventure.js?v=9';
-import {loadDetailTextures,updateDetailWind} from './detail-textures.js?v=9';
+import {GameState,catalog,slots} from './state.js?v=18';
+import {createLife,animateLife,dressBuilding,animateCloth,reactTo,wishOnMeteor} from './life.js?v=18';
+import {createSky,dayAmount} from './sky.js?v=18';
+import {loadArtTextures,updateSurfaceWeather,softParticles} from './surfaces.js?v=18';
+import {addFinesse,animateFinesse,finishBuilding,animateBuildingFine} from './finesse.js?v=18';
+import {createAdventure} from './adventure.js?v=18';
+import {loadDetailTextures,updateDetailWind} from './detail-textures.js?v=18';
 const $=id=>document.getElementById(id),canvas=$('world'),state=new GameState();
 let progressStore;try{progressStore=new SaveStore(window.localStorage)}catch{progressStore=new SaveStore(null)}
 const savedProgress=progressStore.load();
@@ -68,15 +68,15 @@ const petalCount=60,petalArray=new Float32Array(petalCount*3);const petalGeo=new
 
 function updateBuilding(b,celebrate=false){
  if(built.has(b)){const old=built.get(b);outdoor.remove(old);disposeModel(old)}
- const model=createBuilding(b.type,b.level);dressBuilding(model,b.type);finishBuilding(model,b.type,b.level);const [x,z]=slots[b.slot];model.position.set(x,.085,z);model.userData.building=b;outdoor.add(model);built.set(b,model);island.userData.plots[b.slot].visible=false;applySeason(model,season,weather);
+ const model=createBuilding(b.type,b.level);dressBuilding(model,b.type);finishBuilding(model,b.type,b.level);const [x,z]=slots[b.slot];model.position.set(x,.085,z);model.userData.building=b;model.visible=!sky.stargazing;outdoor.add(model);built.set(b,model);island.userData.plots[b.slot].visible=false;applySeason(model,season,weather);
  if(celebrate){model.scale.setScalar(.84);model.userData.growing=true;model.userData.growStart=worldTime;createBurst(x,z)}
 }
 function createBurst(x,z){const a=new Float32Array(60*3),geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(a,3));const m=new T.Points(geo,softParticles('#ffe5a3',3,1,true));m.position.set(x,.6,z);outdoor.add(m);bursts.push({m,start:worldTime})}
 for(const b of state.buildings)updateBuilding(b);
 let saveReady=false;
 const adventure=createAdventure({scene,outdoor,camera,state,
- goTo:(p,z,a,e)=>{targetGoal.set(...p);zoomTarget=z;azimuthTarget=a;elevationTarget=e;},
- captureView:()=>({p:targetGoal.toArray(),zoom:zoomTarget,angle:azimuthTarget,elevation:elevationTarget}),
+ goTo:(p,z,a,e,stargazing=false)=>{setStargazing(stargazing);targetGoal.set(...p);zoomTarget=z;azimuthTarget=a;elevationTarget=e;},
+ captureView:()=>({p:targetGoal.toArray(),zoom:zoomTarget,angle:azimuthTarget,elevation:elevationTarget,stargazing:sky.stargazing}),
  onProgress:()=>saveProgress(),notify,getClimate:()=>({season,weather,hour:sunHour}),getTime:()=>worldTime,
  clearSelection:()=>select(null),setIndoor:inside=>{outdoor.visible=!inside;sky.root.visible=!inside;scene.fog=inside?null:outdoorFog;ring.visible=false;}
 });
@@ -137,15 +137,15 @@ function resize(){
  updateProjection();waterUniforms.uResolution.value.set(innerWidth*ratio,innerHeight*ratio);snowMaterial.uniforms.pixelRatio.value=ratio;
 }
 function updateCamera(dt){const k=Math.min(1,dt*8);target.lerp(targetGoal,k);azimuth=T.MathUtils.lerp(azimuth,azimuthTarget,k);elevation=T.MathUtils.lerp(elevation,elevationTarget,k);if(Math.abs(zoom-zoomTarget)>.001){zoom=T.MathUtils.lerp(zoom,zoomTarget,k);updateProjection()}
- camera.position.set(target.x+Math.sin(azimuth)*45*Math.cos(elevation),target.y+45*Math.sin(elevation),target.z+Math.cos(azimuth)*45*Math.cos(elevation));camera.lookAt(target);camera.updateMatrixWorld();
+ const distance=sky.stargazing?6:45;camera.position.set(target.x+Math.sin(azimuth)*distance*Math.cos(elevation),target.y+distance*Math.sin(elevation),target.z+Math.cos(azimuth)*distance*Math.cos(elevation));camera.lookAt(target);camera.updateMatrixWorld();
 }
-function notify(text){$('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2600)}
+function notify(text,duration=2600){$('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),duration)}
 function select(b){if(b)$('placePanel').hidden=true;state.selected=b;$('detail').hidden=!b;if(b){const [x,z]=slots[b.slot];ring.position.set(x,.16,z);ring.visible=true}else ring.visible=false;updateUI()}
 function updateUI(){
  $('coins').textContent=Math.floor(state.coins).toLocaleString('zh-CN');$('income').textContent=state.paused?'已暂停':`+${state.income} / 分钟`;$('pause').textContent=state.paused?'继续':'暂停';$('gather').disabled=state.paused||state.gatherCooldown>0;$('gather').querySelector('small').textContent=state.gatherCooldown>0?`${Math.ceil(state.gatherCooldown)} 秒后可采集`:'+3 金币';
  document.querySelectorAll('[data-build]').forEach(el=>el.disabled=!state.canBuild(el.dataset.build));
  const done=state.buildings.some(b=>b.type==='lighthouse'),count=state.buildings.length;
- $('questTitle').textContent='在小镇走一走';$('questText').textContent='进屋坐坐，或到海边钓一条鱼。';$('progress').style.width=(done?100:Math.min(75,count*25))+'%';$('lightButton').querySelector('small').textContent=done?'已点亮':count>=3?'500 · +30/分':'建 3 座后解锁';
+ $('questTitle').textContent=sky.stargazing?'把心愿交给星空':'在小镇走一走';$('questText').textContent=sky.stargazing?'流星成群划过，和观星人一起许个愿。':'进屋坐坐，或到海边钓一条鱼。';$('progress').style.width=(done?100:Math.min(75,count*25))+'%';$('lightButton').querySelector('small').textContent=done?'已点亮':count>=3?'500 · +30/分':'建 3 座后解锁';
  const b=state.selected;if(b){$('enterBuilding').hidden=b.type==='garden';const t=catalog[b.type];$('buildingCategory').textContent=`${t.name} · 第 ${b.level} 阶 / 共 5 阶`;$('buildingName').textContent=t.titles[b.level-1];$('stars').textContent='✦'.repeat(b.level)+'✧'.repeat(5-b.level);$('buildingInfo').textContent=`每分钟产出 ${t.income*b.level} 金币。`;$('appearance').textContent=b.level<5?`下阶：${t.details[b.level]}`:`已完成：${t.details[4]}`;$('upgrade').textContent=b.level<5?`升级 · ${state.upgradeCost(b)} 金币`:'已达最高阶';$('upgrade').disabled=!state.canUpgrade(b)}
  const clock=Math.floor(sunHour*60)%1440,hour=Math.floor(clock/60),minute=clock%60;$('timeLabel').textContent=`${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;$('sunTime').value=String(sunHour);$('dayButton').setAttribute('aria-pressed',String(dayAmount(sunHour)>.5));$('nightButton').setAttribute('aria-pressed',String(dayAmount(sunHour)<=.5));
 }
@@ -164,12 +164,14 @@ $('weather').onchange=e=>{weatherChoice=e.target.value;refreshClimate()};$('sunT
 $('dayCycle').onchange=e=>autoDay=e.target.checked;
 function setTime(h){sunHour=h;autoDay=false;$('dayCycle').checked=false;updateUI()}
 $('dayButton').onclick=()=>setTime(12);$('nightButton').onclick=()=>setTime(22);
-const views={all:{p:[0,.7,0],zoom:mobile()?.44:.58,angle:.72,elevation:.75},civic:{p:[-1.5,1,-8.2],zoom:1.1,angle:.2,elevation:.66},market:{p:[-10.4,1,2.7],zoom:1.55,angle:.18,elevation:.66},shops:{p:[9,1,-4.9],zoom:1.24,angle:.28,elevation:.66},homes:{p:[-9,1,6],zoom:1.6,angle:.24,elevation:.67},coast:{p:[2,.5,15],zoom:1.5,angle:.4,elevation:.58},willow:{p:[4.2,1,-2.65],zoom:1.85,angle:.68,elevation:.6},stars:{p:[.3,.8,4.8],zoom:1.85,angle:-.24,elevation:.5}};
-document.querySelectorAll('[data-view]').forEach(el=>el.onclick=()=>{adventure.exit();adventure.stopFishing();$('placePanel').hidden=true;const view=views[el.dataset.view];if(el.dataset.view==='stars')setTime(22);targetGoal.set(...view.p);zoomTarget=view.zoom;azimuthTarget=view.angle;elevationTarget=view.elevation;select(null);document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===el)))});
+const views={all:{p:[0,.7,0],zoom:mobile()?.44:.58,angle:.72,elevation:.75},civic:{p:[-1.5,1,-8.2],zoom:1.1,angle:.2,elevation:.66},market:{p:[-10.4,1,2.7],zoom:1.55,angle:.18,elevation:.66},shops:{p:[9,1,-4.9],zoom:1.24,angle:.28,elevation:.66},homes:{p:[-9,1,6],zoom:1.6,angle:.24,elevation:.67},coast:{p:[2,.5,15],zoom:1.5,angle:.4,elevation:.58},willow:{p:[4.2,1,-2.65],zoom:1.85,angle:.68,elevation:.6},stars:{p:[.3,2.25,4.8],zoom:mobile()?2.5:1.85,angle:2.9,elevation:.10}};
+// Construction plots sit between this low camera and the lookout; restore them on exit.
+function setStargazing(enabled){sky.setStargazing(enabled,worldTime);life.stargazing=enabled;for(const model of built.values())model.visible=!enabled;document.body.classList.toggle('stargazing',enabled);document.querySelector('[data-view=stars]').setAttribute('aria-pressed',String(enabled));if(enabled)document.querySelectorAll('[data-view]:not([data-view=stars])').forEach(el=>el.setAttribute('aria-pressed','false'));}
+document.querySelectorAll('[data-view]').forEach(el=>el.onclick=()=>{adventure.exit();adventure.stopFishing();$('placePanel').hidden=true;const view=views[el.dataset.view];const stargazing=el.dataset.view==='stars';setStargazing(stargazing);if(stargazing){$('climateControls').hidden=true;$('climateToggle').textContent='展开';$('climateToggle').setAttribute('aria-expanded','false');setTime(22);weatherChoice='sun';$('weather').value='sun';refreshClimate();notify('夜空放晴了，和观星人一起等流星吧。');}targetGoal.set(...view.p);zoomTarget=view.zoom;azimuthTarget=view.angle;elevationTarget=view.elevation;select(null);document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===el)))});
 const raycaster=new T.Raycaster(),pointer=new T.Vector2(),touches=new Map();let gesture=null,pinchDistance=0,pinching=false;
 canvas.addEventListener('wheel',e=>{e.preventDefault();changeZoom(e.deltaY<0?.07:-.07)},{passive:false});
 canvas.addEventListener('pointerdown',e=>{touches.set(e.pointerId,{x:e.clientX,y:e.clientY});canvas.setPointerCapture(e.pointerId);if(touches.size===1){pinching=false;gesture={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,moved:false}}else{pinching=true;if(gesture)gesture.moved=true;const a=[...touches.values()];pinchDistance=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}});
-canvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;touches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touches.size===2){const a=[...touches.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);changeZoom((d-pinchDistance)*.004);pinchDistance=d;return}if(!gesture||pinching)return;const dx=e.clientX-gesture.lastX,dy=e.clientY-gesture.lastY;if(Math.hypot(e.clientX-gesture.x,e.clientY-gesture.y)>5)gesture.moved=true;if(gesture.moved){azimuthTarget-=dx*.008;elevationTarget=T.MathUtils.clamp(elevationTarget+dy*.003,.35,1.03)}gesture.lastX=e.clientX;gesture.lastY=e.clientY});
+canvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;touches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touches.size===2){const a=[...touches.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);changeZoom((d-pinchDistance)*.004);pinchDistance=d;return}if(!gesture||pinching)return;const dx=e.clientX-gesture.lastX,dy=e.clientY-gesture.lastY;if(Math.hypot(e.clientX-gesture.x,e.clientY-gesture.y)>5)gesture.moved=true;if(gesture.moved){azimuthTarget-=dx*.008;elevationTarget=T.MathUtils.clamp(elevationTarget+dy*.003,sky.stargazing?.04:.35,1.03)}gesture.lastX=e.clientX;gesture.lastY=e.clientY});
 canvas.addEventListener('pointerup',e=>{
  if(gesture&&!gesture.moved&&!pinching){const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);
   if(adventure.room)adventure.handleRoomRay(raycaster);
@@ -180,12 +182,12 @@ canvas.addEventListener('pointerup',e=>{
  touches.delete(e.pointerId);if(touches.size===0){gesture=null;pinching=false}
 });
 canvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);gesture=null;pinching=touches.size>0});
-canvas.addEventListener('keydown',e=>{if(adventure.key(e))return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','Enter','Escape'].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft')azimuthTarget-=.16;if(e.key==='ArrowRight')azimuthTarget+=.16;if(e.key==='ArrowUp')elevationTarget=Math.min(1.03,elevationTarget+.07);if(e.key==='ArrowDown')elevationTarget=Math.max(.35,elevationTarget-.07);if(e.key==='+')changeZoom(.1);if(e.key==='-')changeZoom(-.1);if(e.key==='Escape')select(null);if(e.key==='Enter'&&state.buildings.length)select(state.buildings[(state.buildings.indexOf(state.selected)+1)%state.buildings.length])});
+canvas.addEventListener('keydown',e=>{if(adventure.key(e))return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','Enter','Escape'].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft')azimuthTarget-=.16;if(e.key==='ArrowRight')azimuthTarget+=.16;if(e.key==='ArrowUp')elevationTarget=Math.min(1.03,elevationTarget+.07);if(e.key==='ArrowDown')elevationTarget=Math.max(sky.stargazing?.04:.35,elevationTarget-.07);if(e.key==='+')changeZoom(.1);if(e.key==='-')changeZoom(-.1);if(e.key==='Escape')select(null);if(e.key==='Enter'&&state.buildings.length)select(state.buildings[(state.buildings.indexOf(state.selected)+1)%state.buildings.length])});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();state.paused=true;$('renderError').hidden=false});
 addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>last=performance.now());
 function frame(now){
  const dt=document.hidden?0:Math.min((now-last)/1000,.25);last=now;state.tick(dt);if(!state.paused){worldTime+=dt;cycleElapsed+=dt;if(autoDay)sunHour=(sunHour+dt*24/180)%24;if(autoCycle&&cycleElapsed>=60){const names=Object.keys(seasonData);season=names[(names.indexOf(season)+1)%4];cycleElapsed=0;refreshClimate()}if(weatherChoice==='auto'&&weather!==currentAutoWeather())refreshClimate()}
- updateCamera(dt);const dusk=updateLight(dt),wind=updateWeather(dt);waterUniforms.uTime.value=worldTime;if(!adventure.room){sky.update(worldTime,sunHour,weather,wind);animateModel(island,worldTime,wind,dusk);animateLife(life,worldTime,wind,dusk,weather);animateFinesse(finesse,worldTime,wind,dusk,season,weather,life.actors);
+ updateCamera(dt);const dusk=updateLight(dt),wind=updateWeather(dt);waterUniforms.uTime.value=worldTime;if(!adventure.room){const skyState=sky.update(worldTime,sunHour,weather,wind);if(skyState.showerStarted){const wish=wishOnMeteor(life,worldTime);if(wish&&sky.stargazing)notify('观星人：'+wish,4800);}animateModel(island,worldTime,wind,dusk);animateLife(life,worldTime,wind,dusk,weather);animateFinesse(finesse,worldTime,wind,dusk,season,weather,life.actors);
  for(const model of built.values()){animateModel(model,worldTime,wind,dusk);animateCloth(model,worldTime,wind);animateBuildingFine(model,worldTime,wind);if(model.userData.growing){const age=worldTime-model.userData.growStart;const s=age<.6?.84+.16*(1-Math.pow(1-age/.6,3)):1;model.scale.setScalar(s);if(age>=.6)model.userData.growing=false}}
  for(let i=bursts.length-1;i>=0;i--){const b=bursts[i],age=worldTime-b.start;if(age>1.8){outdoor.remove(b.m);b.m.geometry.dispose();b.m.material.dispose();bursts.splice(i,1);continue}const a=b.m.geometry.attributes.position.array;for(let j=0;j<60;j++){const angle=j*2.399;a[j*3]=Math.cos(angle)*age*(.3+j%4*.18);a[j*3+1]=age*(2+j%3*.35)-age*age*.75;a[j*3+2]=Math.sin(angle)*age*(.3+j%4*.18)}b.m.geometry.attributes.position.needsUpdate=true;b.m.material.opacity=1-age/1.8}
  }

@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.min.js';
-import {finishMaterial} from './surfaces.js?v=9';
+import {finishMaterial} from './surfaces.js?v=18';
 
 // Original, procedural miniature architecture. No game assets are used.
 const materials=new Map();

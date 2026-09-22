@@ -1,4 +1,4 @@
-import {catalog,slots} from './state.js?v=9';
+import {catalog,slots} from './state.js?v=18';
 export const SAVE_KEY='little-island-progress-v1';
 const validNumber=(n,max)=>Number.isFinite(n)&&n>=0&&n<=max;
 export function validateSave(s){try{return checkSave(s)}catch{return false}}

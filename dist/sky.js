@@ -15,9 +15,22 @@ export function createSky(camera){
  const sun=new T.Mesh(new T.CircleGeometry(.5,40),new T.MeshBasicMaterial({color:'#f3d59b',transparent:true,opacity:.85,depthWrite:false,toneMapped:false}));sun.position.z=-105;root.add(sun);
  const cloudGeo=new T.SphereGeometry(1,10,7),clouds=[];
  for(let i=0;i<6;i++){const g=new T.Group(),mat=new T.MeshBasicMaterial({color:'#fffbed',transparent:true,opacity:.86,depthWrite:false,toneMapped:false});for(let k=0;k<5;k++){const m=new T.Mesh(cloudGeo,mat);m.position.set((k-2)*.63,Math.sin(k*2+i)*.14,Math.cos(k)*.06);m.scale.set(.8,.3+(k%3)*.09,.3);g.add(m)}g.userData.phase=i/6;g.userData.material=mat;root.add(g);clouds.push(g)}
- const meteorUniforms={uOpacity:{value:0}};
- const meteor=new T.Mesh(new T.PlaneGeometry(1,1),new T.ShaderMaterial({uniforms:meteorUniforms,transparent:true,depthWrite:false,vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv;uniform float uOpacity;void main(){float glow=pow(vUv.x,2.)*(1.-smoothstep(0.,.5,abs(vUv.y-.5)));gl_FragColor=vec4(.98,.95,.79,glow*uOpacity);}'}));meteor.position.z=-103;meteor.visible=false;root.add(meteor);
- let cloudPhase=0,lastSkyTime=0,nextMeteor=Infinity,meteorStart=-100,wasNight=false,meteorX=0,meteorY=0,meteorTotal=0;
+ // Reuse a small pool: a shower adds at most six draw calls and no per-frame geometry.
+ const meteorGeometry=new T.PlaneGeometry(1,1),meteors=[];
+ for(let i=0;i<6;i++){
+  const uniforms={uOpacity:{value:0}};
+  const mesh=new T.Mesh(meteorGeometry,new T.ShaderMaterial({uniforms,transparent:true,depthWrite:false,vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv;uniform float uOpacity;void main(){float trail=pow(vUv.x,1.8)*(1.-smoothstep(0.,.5,abs(vUv.y-.5)));float head=exp(-length((vUv-vec2(.92,.5))*vec2(18.,3.))*2.);gl_FragColor=vec4(.99,.95,.79,max(trail,head)*uOpacity);}'}));
+  mesh.position.z=-103;mesh.visible=false;mesh.frustumCulled=false;root.add(mesh);meteors.push({mesh,uniforms,start:-100,x:0,y:0,duration:2.6});
+ }
+ let cloudPhase=0,lastSkyTime=0,nextMeteor=Infinity,wasNight=false,meteorTotal=0,showerTotal=0,stargazing=false;
+ function setStargazing(enabled,time){
+  if(enabled===stargazing)return;stargazing=enabled;nextMeteor=enabled?time+1.8:time+24;
+  for(const m of meteors)m.start=-100;
+ }
+ function startMeteors(time){
+  const count=stargazing?6:1;showerTotal++;
+  for(let i=0;i<count;i++){const m=meteors[i];m.start=time+i*.27;m.x=-.05+i*.072+rand()*.04;m.y=.34+rand()*.1;m.duration=3.2+rand()*.4;m.length=.12+rand()*.055;meteorTotal++;}
+ }
  function resize(w,h){width=w;height=h;backdrop.scale.set(w*1.02,h*1.02,1);for(let i=0;i<starCount;i++){positions[i*3]=starBase[i][0]*w;positions[i*3+1]=starBase[i][1]*h;positions[i*3+2]=-116}sg.attributes.position.needsUpdate=true;moon.position.set(w*(w/h<.8?-.18:.19),h*(w/h<.8?.4:.355),-105);moon.scale.setScalar(Math.min(w*.065,h*.12));sun.scale.setScalar(Math.min(w*.06,h*.09))}
  function update(time,hour,weather,wind){
   cloudPhase+=Math.min(.25,Math.max(0,time-lastSkyTime))*(.009+wind*.014);lastSkyTime=time;
@@ -29,11 +42,14 @@ export function createSky(camera){
   starUniforms.uOpacity.value=night*(1-cloudiness*.93);starUniforms.uTime.value=time;stars.visible=night>.08;moon.visible=night>.03;moonUniforms.uOpacity.value=night*(1-cloudiness*.75);
   sun.visible=hour>5.7&&hour<18.5;sun.material.opacity=day*(1-cloudiness*.7);const phase=(hour-6)/12;sun.position.set((phase-.5)*width*.66,(.2+Math.sin(phase*Math.PI)*.16)*height,-105);
   for(let i=0;i<clouds.length;i++){const g=clouds[i],speed=.009+wind*.014;const u=((i/4+cloudPhase)%1.5)-.75;g.position.set(u*width,(.24+(i%3)*.075)*height,-80+i);g.scale.setScalar(width*(.04+(i%2)*.012));g.userData.material.color.set(night?'#526582':'#fff7e8');g.userData.material.opacity=(night?.67:.84)*(weather==='sun'&&i>3?.45:1)}
-  const clearNight=night>.78&&cloudiness<.4;if(clearNight&&!wasNight)nextMeteor=time+5+rand()*3;if(!clearNight)nextMeteor=Infinity;wasNight=clearNight;
-  if(clearNight&&time>=nextMeteor){meteorStart=time;meteorX=(.1+rand()*.3)*width;meteorY=(.31+rand()*.13)*height;nextMeteor=time+22+rand()*22;meteorTotal++}
-  const age=time-meteorStart;meteor.visible=clearNight&&age>=0&&age<1.55;
-  if(meteor.visible){const dx=-width*.3,dy=-height*.12,len=width*.16,angle=Math.atan2(dy,dx),f=age/1.55;meteor.position.set(meteorX+dx*f-Math.cos(angle)*len/2,meteorY+dy*f-Math.sin(angle)*len/2,-103);meteor.rotation.z=angle;meteor.scale.set(len,height*.004,1);meteorUniforms.uOpacity.value=Math.sin(f*Math.PI)*.95}
-  return {day,night,meteorTotal};
+  const clearNight=night>.78&&cloudiness<.4;let showerStarted=false;
+  if(clearNight&&!wasNight)nextMeteor=time+(stargazing?1.8:5+rand()*3);
+  if(!clearNight){nextMeteor=Infinity;for(const m of meteors)m.start=-100;}wasNight=clearNight;
+  if(clearNight&&time>=nextMeteor){startMeteors(time);nextMeteor=time+(stargazing?14+rand()*4:22+rand()*22);showerStarted=true;}
+  for(const m of meteors){const age=time-m.start;const visible=clearNight&&age>=0&&age<m.duration;m.mesh.visible=visible;
+   if(visible){const dx=-width*.29,dy=-height*.16,len=width*m.length,angle=Math.atan2(dy,dx),f=age/m.duration;m.mesh.position.set(m.x*width+dx*f-Math.cos(angle)*len/2,(m.y-(height>width*1.3?.18:0))*height+dy*f-Math.sin(angle)*len/2,-103);m.mesh.rotation.z=angle;m.mesh.scale.set(len,Math.max(height*.004,width*.0018),1);m.uniforms.uOpacity.value=Math.pow(Math.sin(f*Math.PI),.65)*.95;}
+  }
+  return {day,night,meteorTotal,showerTotal,showerStarted};
  }
- return {root,stars,moon,sun,clouds,meteor,resize,update,get meteorTotal(){return meteorTotal}};
+ return {root,stars,moon,sun,clouds,meteors,setStargazing,resize,update,get stargazing(){return stargazing},get meteorTotal(){return meteorTotal}};
 }

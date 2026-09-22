@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.min.js';
-import {material,seasonal,compact} from './models.js?v=9';
-import {softParticles} from './surfaces.js?v=9';
-import {resident,animateResident,strollResident,turnResident,poseFishing} from './residents.js?v=9';
+import {material,seasonal,compact} from './models.js?v=18';
+import {softParticles} from './surfaces.js?v=18';
+import {resident,animateResident,strollResident,turnResident,poseFishing,poseWish} from './residents.js?v=18';
 const cube=new T.BoxGeometry(1,1,1),ball=new T.SphereGeometry(1,10,7);
 function mesh(p,g,c,x=0,y=0,z=0,sx=1,sy=1,sz=1){const m=new T.Mesh(g,typeof c==='string'?material(c):c);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;m.receiveShadow=true;p.add(m);return m}
 function box(p,x,y,z,w,h,d,c){return mesh(p,cube,c,x,y+h*.5,z,w,h,d)}
@@ -99,10 +99,23 @@ export function animateLife(life,time,wind,night,weather){
  if(kid.userData.walking){const step=Math.min(dist,dt*.75);kid.position.x+=dx/dist*step;kid.position.z+=dz/dist*step;turnResident(kid,Math.atan2(dx,dz),dt);}kid.position.y=.08;kid.userData.idleActivity='look';
  const swim=time*.27;mother.position.set(4.75+Math.sin(swim)*.63,.15+Math.sin(time*2)*.02,-2.58+Math.cos(swim)*.47);mother.rotation.y=Math.atan2(Math.cos(swim)*.63,-Math.sin(swim)*.47);baby.position.set(4.75+Math.sin(swim-.65)*.63,.15,-2.58+Math.cos(swim-.65)*.47);baby.rotation.y=Math.atan2(Math.cos(swim-.65)*.63,-Math.sin(swim-.65)*.47);
  turtle.rotation.y=-.2+Math.sin(time*.15)*.3;turtle.position.y=.11+Math.sin(time*.7)*.008;
- for(let i=0;i<a.length;i++){const actor=a[i],role=actor.userData.actor.role,react=actor.userData.actor.reactUntil>time,walking=['walk','child','cat'].includes(role);if(actor.userData.character){animateResident(actor,time,actor.userData.walking||false,wind);if(role==='fish'&&!react)poseFishing(actor,time);continue;}if(actor.userData.legs)actor.userData.legs.forEach((leg,j)=>leg.rotation.x=walking?Math.sin(time*(role==='cat'?8:5)+j*Math.PI)*.4:0);if(actor.userData.arms)actor.userData.arms.forEach((arm,j)=>{arm.rotation.x=walking?Math.sin(time*5+j*Math.PI)*.35:Math.sin(time*1.3+i)*.06;if(react&&j===0){arm.rotation.z=-1.7;arm.rotation.x=Math.sin(time*9)*.4}else arm.rotation.z=0});if(react&&role==='cat')actor.position.y+=Math.abs(Math.sin(time*6))*.2;if(actor.userData.wing)actor.userData.wing.rotation.z=react?Math.sin(time*10)*.55:0;if(role==='turtle'&&actor.userData.head)actor.userData.head.position.z=.38+(react?.07+Math.sin(time*3)*.025:0);}
+ for(let i=0;i<a.length;i++){const actor=a[i],role=actor.userData.actor.role,react=actor.userData.actor.reactUntil>time,walking=['walk','child','cat'].includes(role);if(actor.userData.character){animateResident(actor,time,actor.userData.walking||false,wind);if(role==='fish'&&!react)poseFishing(actor,time);if(role==='astronomer'){
+  turnResident(actor,life.stargazing?2.9:.9,dt);
+  const d=actor.userData;d.stargazeBlend=(d.stargazeBlend||0)+((life.stargazing?1:0)-(d.stargazeBlend||0))*(1-Math.exp(-dt*4));
+  d.head.rotation.x=(-.24+Math.sin(time*.7)*.018)*d.stargazeBlend;
+  if(d.wishUntil>time)poseWish(actor,time,d.wishStart);
+ }continue;}if(actor.userData.legs)actor.userData.legs.forEach((leg,j)=>leg.rotation.x=walking?Math.sin(time*(role==='cat'?8:5)+j*Math.PI)*.4:0);if(actor.userData.arms)actor.userData.arms.forEach((arm,j)=>{arm.rotation.x=walking?Math.sin(time*5+j*Math.PI)*.35:Math.sin(time*1.3+i)*.06;if(react&&j===0){arm.rotation.z=-1.7;arm.rotation.x=Math.sin(time*9)*.4}else arm.rotation.z=0});if(react&&role==='cat')actor.position.y+=Math.abs(Math.sin(time*6))*.2;if(actor.userData.wing)actor.userData.wing.rotation.z=react?Math.sin(time*10)*.55:0;if(role==='turtle'&&actor.userData.head)actor.userData.head.position.z=.38+(react?.07+Math.sin(time*3)*.025:0);}
  for(let i=0;i<life.birds.length;i++){const b=life.birds[i],t=time*.24+i*.6;b.position.set(Math.sin(t)*5.2,3.8+Math.sin(t*.6+i)*.4,Math.cos(t)*3.8);b.rotation.y=Math.atan2(Math.cos(t)*5.2,-Math.sin(t)*3.8);b.userData.wings.forEach((w,j)=>w.rotation.z=Math.sin(time*7+i)*(j===0?-1:1)*.55);b.visible=night<.8&&weather!=='rain'}
  life.nightLights.forEach(light=>light.intensity=night*2.5);
  life.fireflies.material.opacity=night*(weather==='rain'?.05:.8);for(let i=0;i<50;i++){const p=life.fireflyPositions;p[i*3]=3.7+Math.sin(i*2.4+time*.2)*2;p[i*3+1]=.5+(Math.sin(i*3+time*.8)+1)*.5;p[i*3+2]=-2.6+Math.cos(i*1.8+time*.18)*1.5}life.fireflies.geometry.attributes.position.needsUpdate=true;
 }
-export function reactTo(actor,time){const a=actor.userData.actor;a.reactUntil=time+2.8;const phrases={cat:'三花猫蹭了蹭你的手。',duck:'鸭子抖抖翅膀，继续在池塘里游泳。',turtle:'小龟伸长脖子看了看你。',merchant:'刚摘的水果！要在小镇多逛一会儿吗？',walk:'沿着石板路走，就能找到柳树和池塘。',child:'你也看到那只三花猫了吗？',fish:'嘘——鱼儿快要上钩了。',astronomer:'晴朗的夜里，偶尔能等到流星。'};return phrases[a.role]||'居民向你挥了挥手。'}
+const wishes=['愿小镇的每一盏灯，都等得到归来的人。','愿明天醒来，又是温柔而明亮的一天。','愿你挂念的人，此刻也正被星光照亮。','愿每一个小小的心愿，都慢慢开出花来。'];
+export function wishOnMeteor(life,time){
+ if(!Number.isFinite(time))return null;
+ const actor=life.actors.find(o=>o.userData.actor.role==='astronomer');if(!actor)return null;
+ const d=actor.userData;if(time<(d.wishCooldownUntil??-Infinity))return null;
+ const index=d.wishIndex||0;d.wishText=wishes[index%wishes.length];d.wishIndex=index+1;d.wishStart=time;d.wishUntil=time+5;d.wishCooldownUntil=time+7;
+ return d.wishText;
+}
+export function reactTo(actor,time){const d=actor.userData,a=d.actor;if(a.role==='astronomer'&&d.wishUntil>time)return d.wishText;a.reactUntil=time+2.8;const phrases={cat:'三花猫蹭了蹭你的手。',duck:'鸭子抖抖翅膀，继续在池塘里游泳。',turtle:'小龟伸长脖子看了看你。',merchant:'刚摘的水果！要在小镇多逛一会儿吗？',walk:'沿着石板路走，就能找到柳树和池塘。',child:'你也看到那只三花猫了吗？',fish:'嘘——鱼儿快要上钩了。',astronomer:'晴朗的夜里，偶尔能等到流星。'};return phrases[a.role]||'居民向你挥了挥手。'}
 export {cloth,lantern,willow,stall,human};
