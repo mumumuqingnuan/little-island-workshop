@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.min.js';
 import {material,seasonal,box,sphere,cylinder,beam,group,windowFrame,flowers,compact,mesh,disposeModel} from './models.js?v=9';
-import {resident,animateResident} from './residents.js?v=9';
+import {resident,animateResident,turnResident} from './residents.js?v=9';
 import {dressBed,dressCushion,textileMaterial} from './textiles.js?v=9';
 import {contact} from './finesse.js?v=9';
 
@@ -94,6 +94,6 @@ export function findRoomPath(room,x,z){
 export function walkRoom(room,x,z){room.path=findRoomPath(room,x,z);}
 export function animateInterior(room,time,dt,night){
  if(!room)return;room.sunlight.material.opacity=(1-night)*.11;const p=room.player;let budget=dt*1.6;
- while(budget>0&&room.path.length){const goal=room.path[0],dx=goal.x-p.position.x,dz=goal.z-p.position.z,d=Math.hypot(dx,dz);p.rotation.y=Math.atan2(dx,dz);if(d<=budget){p.position.set(goal.x,.06,goal.z);room.path.shift();budget-=d;}else{p.position.x+=dx/d*budget;p.position.z+=dz/d*budget;budget=0;}}
+ while(budget>0&&room.path.length){const goal=room.path[0],dx=goal.x-p.position.x,dz=goal.z-p.position.z,d=Math.hypot(dx,dz);turnResident(p,Math.atan2(dx,dz),dt);if(d<=budget){p.position.set(goal.x,.06,goal.z);room.path.shift();budget-=d;}else{p.position.x+=dx/d*budget;p.position.z+=dz/d*budget;budget=0;}}
  animateResident(p,time,room.path.length>0);room.npcs.forEach(n=>animateResident(n,time,false));
 }

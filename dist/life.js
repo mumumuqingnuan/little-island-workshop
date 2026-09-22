@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.min.js';
 import {material,seasonal,compact} from './models.js?v=9';
 import {softParticles} from './surfaces.js?v=9';
-import {resident,animateResident,poseFishing} from './residents.js?v=9';
+import {resident,animateResident,strollResident,turnResident,poseFishing} from './residents.js?v=9';
 const cube=new T.BoxGeometry(1,1,1),ball=new T.SphereGeometry(1,10,7);
 function mesh(p,g,c,x=0,y=0,z=0,sx=1,sy=1,sz=1){const m=new T.Mesh(g,typeof c==='string'?material(c):c);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;m.receiveShadow=true;p.add(m);return m}
 function box(p,x,y,z,w,h,d,c){return mesh(p,cube,c,x,y+h*.5,z,w,h,d)}
@@ -91,13 +91,15 @@ export function animateCloth(root,time,wind){
 }
 export function animateLife(life,time,wind,night,weather){
  animateCloth(life.root,time,wind);const a=life.actors;
+ const dt=life.lastTime===undefined?0:Math.min(.25,Math.max(0,time-life.lastTime));life.lastTime=time;
  const walker=a[1],kid=a[2],cat=a[5],mother=a[6],baby=a[7],turtle=a[8];
- walker.position.set(Math.sin(time*.13)*4.3,.08,1.03);walker.rotation.y=Math.cos(time*.13)>0?Math.PI/2:-Math.PI/2;
+ walker.position.y=.08;strollResident(walker,[[-4.3,1.03],[3.9,1.03],[3.9,1.8],[-4.3,1.8]],time,dt,.42);
  cat.position.set(-2.2+Math.sin(time*.26)*1.5,.12,1.08+Math.sin(time*.39)*.4);cat.rotation.y=Math.atan2(Math.cos(time*.26)*.39,Math.cos(time*.39)*.156);cat.userData.tail.rotation.z=Math.sin(time*2)*.27;
- kid.position.set(cat.position.x-.75,.08,cat.position.z+.16);kid.rotation.y=cat.rotation.y;
+ const dx=cat.position.x-.75-kid.position.x,dz=cat.position.z+.16-kid.position.z,dist=Math.hypot(dx,dz);kid.userData.walking=dist>.35&&kid.userData.actor.reactUntil<=time;
+ if(kid.userData.walking){const step=Math.min(dist,dt*.75);kid.position.x+=dx/dist*step;kid.position.z+=dz/dist*step;turnResident(kid,Math.atan2(dx,dz),dt);}kid.position.y=.08;kid.userData.idleActivity='look';
  const swim=time*.27;mother.position.set(4.75+Math.sin(swim)*.63,.15+Math.sin(time*2)*.02,-2.58+Math.cos(swim)*.47);mother.rotation.y=Math.atan2(Math.cos(swim)*.63,-Math.sin(swim)*.47);baby.position.set(4.75+Math.sin(swim-.65)*.63,.15,-2.58+Math.cos(swim-.65)*.47);baby.rotation.y=Math.atan2(Math.cos(swim-.65)*.63,-Math.sin(swim-.65)*.47);
  turtle.rotation.y=-.2+Math.sin(time*.15)*.3;turtle.position.y=.11+Math.sin(time*.7)*.008;
- for(let i=0;i<a.length;i++){const actor=a[i],role=actor.userData.actor.role,react=actor.userData.actor.reactUntil>time,walking=['walk','child','cat'].includes(role);if(actor.userData.character){animateResident(actor,time,walking,wind);if(role==='fish'&&!react)poseFishing(actor,time);continue;}if(actor.userData.legs)actor.userData.legs.forEach((leg,j)=>leg.rotation.x=walking?Math.sin(time*(role==='cat'?8:5)+j*Math.PI)*.4:0);if(actor.userData.arms)actor.userData.arms.forEach((arm,j)=>{arm.rotation.x=walking?Math.sin(time*5+j*Math.PI)*.35:Math.sin(time*1.3+i)*.06;if(react&&j===0){arm.rotation.z=-1.7;arm.rotation.x=Math.sin(time*9)*.4}else arm.rotation.z=0});if(react&&role==='cat')actor.position.y+=Math.abs(Math.sin(time*6))*.2;if(actor.userData.wing)actor.userData.wing.rotation.z=react?Math.sin(time*10)*.55:0;if(role==='turtle'&&actor.userData.head)actor.userData.head.position.z=.38+(react?.07+Math.sin(time*3)*.025:0);}
+ for(let i=0;i<a.length;i++){const actor=a[i],role=actor.userData.actor.role,react=actor.userData.actor.reactUntil>time,walking=['walk','child','cat'].includes(role);if(actor.userData.character){animateResident(actor,time,actor.userData.walking||false,wind);if(role==='fish'&&!react)poseFishing(actor,time);continue;}if(actor.userData.legs)actor.userData.legs.forEach((leg,j)=>leg.rotation.x=walking?Math.sin(time*(role==='cat'?8:5)+j*Math.PI)*.4:0);if(actor.userData.arms)actor.userData.arms.forEach((arm,j)=>{arm.rotation.x=walking?Math.sin(time*5+j*Math.PI)*.35:Math.sin(time*1.3+i)*.06;if(react&&j===0){arm.rotation.z=-1.7;arm.rotation.x=Math.sin(time*9)*.4}else arm.rotation.z=0});if(react&&role==='cat')actor.position.y+=Math.abs(Math.sin(time*6))*.2;if(actor.userData.wing)actor.userData.wing.rotation.z=react?Math.sin(time*10)*.55:0;if(role==='turtle'&&actor.userData.head)actor.userData.head.position.z=.38+(react?.07+Math.sin(time*3)*.025:0);}
  for(let i=0;i<life.birds.length;i++){const b=life.birds[i],t=time*.24+i*.6;b.position.set(Math.sin(t)*5.2,3.8+Math.sin(t*.6+i)*.4,Math.cos(t)*3.8);b.rotation.y=Math.atan2(Math.cos(t)*5.2,-Math.sin(t)*3.8);b.userData.wings.forEach((w,j)=>w.rotation.z=Math.sin(time*7+i)*(j===0?-1:1)*.55);b.visible=night<.8&&weather!=='rain'}
  life.nightLights.forEach(light=>light.intensity=night*2.5);
  life.fireflies.material.opacity=night*(weather==='rain'?.05:.8);for(let i=0;i<50;i++){const p=life.fireflyPositions;p[i*3]=3.7+Math.sin(i*2.4+time*.2)*2;p[i*3+1]=.5+(Math.sin(i*3+time*.8)+1)*.5;p[i*3+2]=-2.6+Math.cos(i*1.8+time*.18)*1.5}life.fireflies.geometry.attributes.position.needsUpdate=true;

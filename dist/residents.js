@@ -88,14 +88,37 @@ export function resident(parent,options={}){
  compactResident(head);compactResident(body);
  Object.assign(g.userData,{arms,forearms,hands,legs,knees,head,eyes,body,skirt,hair:movingHair});if(child)g.scale.setScalar(.74);return g;
 }
+export function turnResident(g,angle,dt){
+ const delta=Math.atan2(Math.sin(angle-g.rotation.y),Math.cos(angle-g.rotation.y));g.rotation.y+=delta*(1-Math.exp(-dt*5));
+}
+export function strollResident(g,path,time,dt,speed=.32){
+ const d=g.userData,seed=d.character.seed,cycle=15+seed%7,rest=4+seed%4,phase=(time+seed%23)%cycle,react=(d.actor||d.resident).reactUntil>time;
+ if(d.distance===undefined)d.distance=d.phase||0;
+ const walking=phase>rest&&!react;d.walking=walking;d.idleActivity=['look','stretch','wave'][seed%3];
+ const ease=walking?Math.min(1,(phase-rest)*1.8,(cycle-phase)*1.8):0;
+ d.distance+=dt*speed*Math.max(0,ease);const p=routePosition(path,d.distance);g.position.x=p.x;g.position.z=p.z;
+ if(walking)turnResident(g,p.angle,dt);return walking;
+}
 export function animateResident(g,time,walking=false,wind=.3){
- const d=g.userData,active=(d.actor||d.resident).reactUntil>time,seed=d.character.seed,phase=time*(d.character.child?6.2:5.5)+seed%19,bob=walking?Math.abs(Math.sin(phase))*.013:Math.sin(time*1.9+seed)*.003;
- d.legs.forEach((leg,i)=>{const step=Math.sin(phase+i*Math.PI);leg.rotation.x=walking?step*.31:0;d.knees[i].rotation.x=walking?Math.max(0,-step)*.48:.025;});
- d.arms.forEach((arm,i)=>{arm.position.y=arm.userData.baseY+bob;arm.rotation.set(walking?-Math.sin(phase+i*Math.PI)*.25:.025,0,arm.userData.side*.065);d.forearms[i].rotation.set(-.1,0,0);d.hands[i].rotation.z=0;if(active&&i===0){arm.rotation.x=-.25;arm.rotation.z=-1.03;d.forearms[i].rotation.z=-1.45;d.forearms[i].rotation.x=-.12;d.hands[i].rotation.z=Math.sin(time*8)*.28;}});
- d.body.position.y=bob;d.body.rotation.y=walking?Math.sin(phase)*.018:0;d.head.rotation.y=active?0:Math.sin(time*.37+seed)*.095;d.head.rotation.z=Math.sin(time*.6+seed)*.018;
+ const d=g.userData,active=(d.actor||d.resident).reactUntil>time,seed=d.character.seed;
+ const last=d.motionLast,dt=last?Math.min(.25,Math.max(0,time-last.time)):0;
+ const distance=last?Math.hypot(g.position.x-last.x,g.position.z-last.z):0;
+ // Walk cycles follow actual travelled distance; stopping no longer leaves feet marching.
+ d.motionLast={time,x:g.position.x,z:g.position.z};
+ d.walkBlend=(d.walkBlend||0)+((walking&&!active?1:0)-(d.walkBlend||0))*(1-Math.exp(-dt*7));
+ d.stride=(d.stride||seed%19)+(walking?Math.min(distance,.2)*(d.character.child?13:10):0);
+ const blend=d.walkBlend,phase=d.stride,bob=Math.abs(Math.sin(phase))*blend*.016+Math.sin(time*1.7+seed)*.003;
+ d.legs.forEach((leg,i)=>{const step=Math.sin(phase+i*Math.PI);leg.rotation.x=step*.34*blend;leg.rotation.z=(i?1:-1)*.018*blend;d.knees[i].rotation.x=.025+Math.max(0,-step)*.58*blend;});
+ const idle=(time+seed%31)%13,activity=d.idleActivity||['look','stretch','wave'][seed%3],gesture=!walking&&!active?Math.sin(Math.PI*Math.min(1,Math.max(0,(idle-2)/4))):0;
+ d.arms.forEach((arm,i)=>{const step=Math.sin(phase+i*Math.PI);arm.position.y=arm.userData.baseY+bob;arm.rotation.set(-step*.24*blend+Math.sin(time*1.4+seed+i)*.025,0,arm.userData.side*(.06+.025*blend));d.forearms[i].rotation.set(-.18-Math.max(0,step)*.2*blend,0,0);d.hands[i].rotation.z=Math.sin(time*1.3+i)*.035;
+  if((active||(activity==='wave'&&gesture>.05))&&i===0){const amount=active?1:gesture;arm.rotation.x=-.25*amount;arm.rotation.z=-1.03*amount;d.forearms[i].rotation.z=-1.45*amount;d.hands[i].rotation.z=Math.sin(time*7)*.22*amount;}
+  if(activity==='stretch'&&gesture>0){arm.rotation.z=arm.userData.side*(.06+gesture*.8);arm.rotation.x=-gesture*.6;d.forearms[i].rotation.x=-gesture*.9;}
+ });
+ d.body.position.y=bob;d.body.rotation.y=Math.sin(phase)*.055*blend;d.body.rotation.z=Math.sin(phase)*.025*blend;
+ d.head.rotation.y=active?0:Math.sin(time*.65+seed)*(.09+(activity==='look'?gesture*.3:0));d.head.rotation.z=Math.sin(time*.6+seed)*.025;
  const blink=(time+seed*.17)%4.9,open=blink<.15?.12+.88*Math.abs(blink-.075)/.075:1;d.eyes.forEach(e=>e.scale.y=open);
- if(d.skirt)d.skirt.rotation.z=walking?Math.sin(phase)*.027:Math.sin(time*1.4)*wind*.014;
- d.hair.forEach((h,i)=>{h.rotation.x=Math.sin(time*2.4+i+seed)*(.025+wind*.1+(walking?.04:0));h.rotation.z=Math.sin(time*1.7+i)*.045;});
+ if(d.skirt)d.skirt.rotation.z=Math.sin(phase)*.04*blend+Math.sin(time*1.4)*wind*.014;
+ d.hair.forEach((h,i)=>{h.rotation.x=Math.sin(time*2.4+i+seed)*(.025+wind*.1+blend*.04);h.rotation.z=Math.sin(time*1.7+i)*.045;});
 }
 export function poseFishing(g,time=0){g.userData.arms.forEach((arm,i)=>{arm.rotation.x=-.7;arm.rotation.z=(i===0?-1:1)*.1;g.userData.forearms[i].rotation.x=-.72+Math.sin(time*1.2)*.025;g.userData.forearms[i].rotation.z=(i===0?-1:1)*.13;});}
 export function greetResident(g,time){const d=g.userData.resident;d.reactUntil=time+3.2;return `${d.name}：${d.lines[d.nextLine++%d.lines.length]}`;}

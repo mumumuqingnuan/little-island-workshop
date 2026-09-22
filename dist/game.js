@@ -1,5 +1,6 @@
 import * as T from './vendor/three.module.min.js';
 import {createBuilding,createIsland,applySeason,animateModel,disposeModel,seasonal,material} from './models.js?v=9';
+import {SaveStore} from './save.js';
 import {GameState,catalog,slots} from './state.js?v=9';
 import {createLife,animateLife,dressBuilding,animateCloth,reactTo} from './life.js?v=9';
 import {createSky,dayAmount} from './sky.js?v=9';
@@ -8,6 +9,9 @@ import {addFinesse,animateFinesse,finishBuilding,animateBuildingFine} from './fi
 import {createAdventure} from './adventure.js?v=9';
 import {loadDetailTextures,updateDetailWind} from './detail-textures.js?v=9';
 const $=id=>document.getElementById(id),canvas=$('world'),state=new GameState();
+let progressStore;try{progressStore=new SaveStore(window.localStorage)}catch{progressStore=new SaveStore(null)}
+const savedProgress=progressStore.load();
+if(savedProgress){state.coins=savedProgress.state.coins;state.buildings=savedProgress.state.buildings;state.gatherCooldown=savedProgress.state.gatherCooldown;}
 const mobile=()=>innerWidth<=760;
 const seasonData={
  spring:{name:'春',caption:'SPRING · 春日来信',grass:'#9fbd79',leaf:'#97b775',leaf2:'#e3b6bc',flower:'#f2c1c4',water:'#83c8d2',sky:'#c7e2e5'},
@@ -17,6 +21,7 @@ const seasonData={
 };
 const weatherNames={sun:'晴天',cloud:'多云',wind:'起风',rain:'下雨',snow:'飘雪'};
 let season='spring',weather='wind',weatherChoice='wind',sunHour=16,autoDay=true,autoCycle=false,cycleElapsed=0,worldTime=0,last=performance.now(),nextUI=0;
+if(savedProgress){({season,weatherChoice,sunHour,autoDay,autoCycle}=savedProgress.climate);}
 let azimuth=.72,azimuthTarget=.72,elevation=.69,elevationTarget=.69,zoom=mobile()?.44:.58,zoomTarget=zoom,toastTimer;
 // Use the display's native resolution instead of forcing extra supersampling.
 let renderer,fineQuality=true;function renderRatio(){return Math.min(fineQuality?(mobile()?1.75:2):(mobile()?1.25:1.5),devicePixelRatio||1);}
@@ -68,12 +73,29 @@ function updateBuilding(b,celebrate=false){
 }
 function createBurst(x,z){const a=new Float32Array(60*3),geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(a,3));const m=new T.Points(geo,softParticles('#ffe5a3',3,1,true));m.position.set(x,.6,z);outdoor.add(m);bursts.push({m,start:worldTime})}
 for(const b of state.buildings)updateBuilding(b);
+let saveReady=false;
 const adventure=createAdventure({scene,outdoor,camera,state,
  goTo:(p,z,a,e)=>{targetGoal.set(...p);zoomTarget=z;azimuthTarget=a;elevationTarget=e;},
  captureView:()=>({p:targetGoal.toArray(),zoom:zoomTarget,angle:azimuthTarget,elevation:elevationTarget}),
- notify,getClimate:()=>({season,weather,hour:sunHour}),getTime:()=>worldTime,
+ onProgress:()=>saveProgress(),notify,getClimate:()=>({season,weather,hour:sunHour}),getTime:()=>worldTime,
  clearSelection:()=>select(null),setIndoor:inside=>{outdoor.visible=!inside;sky.root.visible=!inside;scene.fog=inside?null:outdoorFog;ring.visible=false;}
 });
+
+if(savedProgress?.fishing.pending){adventure.startFishing(savedProgress.fishing.pending.spot);}
+if(savedProgress)adventure.game.restore(savedProgress.fishing);
+saveReady=true;$('weather').value=weatherChoice;$('dayCycle').checked=autoDay;$('seasonCycle').checked=autoCycle;
+function saveProgress(manual=false){
+ if(!saveReady)return;
+ const ok=progressStore.write({version:1,savedAt:Date.now(),state:{coins:state.coins,buildings:state.buildings.map(({type,slot,level})=>({type,slot,level})),gatherCooldown:state.gatherCooldown},fishing:adventure.game.snapshot(),climate:{season,weatherChoice,sunHour,autoDay,autoCycle}});
+ $('saveStatus').textContent=ok?'已保存到此浏览器 · 下次打开继续':progressStore.error;
+ if(manual)notify(ok?'进度已保存，下次打开可以继续。':progressStore.error);
+}
+$('saveNow').onclick=()=>saveProgress(true);
+$('saveStatus').textContent=progressStore.error||(savedProgress?(progressStore.recovered?'已恢复备用存档':'已继续上次的小镇'):'每 10 秒自动保存 · 也可手动保存');
+setInterval(()=>{if(!document.hidden)saveProgress();},10000);
+addEventListener('pagehide',()=>saveProgress());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)saveProgress();});
+addEventListener('storage',e=>{if(e.key==='little-island-progress-v1'&&e.newValue!==progressStore.lastRaw){progressStore.blocked=true;progressStore.error='另一窗口已更新存档，请刷新后继续';state.paused=true;$('saveStatus').textContent=progressStore.error;}});
 
 const color=new T.Color(),skyColor=new T.Color(),directColor=new T.Color();
 function setSeason(value){season=value;cycleElapsed=0;refreshClimate();notify(`${seasonData[value].name}天来了`)}
@@ -120,16 +142,16 @@ function updateCamera(dt){const k=Math.min(1,dt*8);target.lerp(targetGoal,k);azi
 function notify(text){$('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2600)}
 function select(b){if(b)$('placePanel').hidden=true;state.selected=b;$('detail').hidden=!b;if(b){const [x,z]=slots[b.slot];ring.position.set(x,.16,z);ring.visible=true}else ring.visible=false;updateUI()}
 function updateUI(){
- $('coins').textContent=Math.floor(state.coins).toLocaleString('zh-CN');$('income').textContent=state.paused?'已暂停':`+${state.income} / 秒`;$('pause').textContent=state.paused?'继续':'暂停';$('gather').disabled=state.paused;
+ $('coins').textContent=Math.floor(state.coins).toLocaleString('zh-CN');$('income').textContent=state.paused?'已暂停':`+${state.income} / 分钟`;$('pause').textContent=state.paused?'继续':'暂停';$('gather').disabled=state.paused||state.gatherCooldown>0;$('gather').querySelector('small').textContent=state.gatherCooldown>0?`${Math.ceil(state.gatherCooldown)} 秒后可采集`:'+3 金币';
  document.querySelectorAll('[data-build]').forEach(el=>el.disabled=!state.canBuild(el.dataset.build));
  const done=state.buildings.some(b=>b.type==='lighthouse'),count=state.buildings.length;
- $('questTitle').textContent='在小镇走一走';$('questText').textContent='进屋坐坐，或到海边钓一条鱼。';$('progress').style.width=(done?100:Math.min(75,count*25))+'%';$('lightButton').querySelector('small').textContent=done?'已点亮':count>=3?'500 · +30/秒':'建 3 座后解锁';
- const b=state.selected;if(b){$('enterBuilding').hidden=b.type==='garden';const t=catalog[b.type];$('buildingCategory').textContent=`${t.name} · 第 ${b.level} 阶 / 共 5 阶`;$('buildingName').textContent=t.titles[b.level-1];$('stars').textContent='✦'.repeat(b.level)+'✧'.repeat(5-b.level);$('buildingInfo').textContent=`每秒产出 ${t.income*b.level} 金币。`;$('appearance').textContent=b.level<5?`下阶：${t.details[b.level]}`:`已完成：${t.details[4]}`;$('upgrade').textContent=b.level<5?`升级 · ${state.upgradeCost(b)} 金币`:'已达最高阶';$('upgrade').disabled=!state.canUpgrade(b)}
+ $('questTitle').textContent='在小镇走一走';$('questText').textContent='进屋坐坐，或到海边钓一条鱼。';$('progress').style.width=(done?100:Math.min(75,count*25))+'%';$('lightButton').querySelector('small').textContent=done?'已点亮':count>=3?'500 · +30/分':'建 3 座后解锁';
+ const b=state.selected;if(b){$('enterBuilding').hidden=b.type==='garden';const t=catalog[b.type];$('buildingCategory').textContent=`${t.name} · 第 ${b.level} 阶 / 共 5 阶`;$('buildingName').textContent=t.titles[b.level-1];$('stars').textContent='✦'.repeat(b.level)+'✧'.repeat(5-b.level);$('buildingInfo').textContent=`每分钟产出 ${t.income*b.level} 金币。`;$('appearance').textContent=b.level<5?`下阶：${t.details[b.level]}`:`已完成：${t.details[4]}`;$('upgrade').textContent=b.level<5?`升级 · ${state.upgradeCost(b)} 金币`:'已达最高阶';$('upgrade').disabled=!state.canUpgrade(b)}
  const clock=Math.floor(sunHour*60)%1440,hour=Math.floor(clock/60),minute=clock%60;$('timeLabel').textContent=`${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;$('sunTime').value=String(sunHour);$('dayButton').setAttribute('aria-pressed',String(dayAmount(sunHour)>.5));$('nightButton').setAttribute('aria-pressed',String(dayAmount(sunHour)<=.5));
 }
-$('gather').onclick=()=>{if(state.paused)return;state.gather();notify('+12 金币');updateUI()};
-document.querySelectorAll('[data-build]').forEach(el=>el.onclick=()=>{const b=state.build(el.dataset.build);if(!b)return;updateBuilding(b,true);select(b);notify(`${catalog[b.type].titles[0]}建好了`) });
-$('upgrade').onclick=()=>{const b=state.selected;if(!state.upgrade(b))return;updateBuilding(b,true);select(b);notify(`升级完成 · ${catalog[b.type].titles[b.level-1]}`)};
+$('gather').onclick=()=>{if(state.paused)return;if(!state.gather())return;notify('采集到小镇物资 · +3 金币');updateUI();saveProgress()};
+document.querySelectorAll('[data-build]').forEach(el=>el.onclick=()=>{const b=state.build(el.dataset.build);if(!b)return;updateBuilding(b,true);select(b);notify(`${catalog[b.type].titles[0]}建好了`);saveProgress() });
+$('upgrade').onclick=()=>{const b=state.selected;if(!state.upgrade(b))return;updateBuilding(b,true);select(b);notify(`升级完成 · ${catalog[b.type].titles[b.level-1]}`);saveProgress()};
 $('enterBuilding').onclick=()=>{const b=state.selected;if(!b||b.type==='garden')return;adventure.enter({id:'built-'+b.slot,name:catalog[b.type].titles[b.level-1],category:'我的小岛建筑',kind:b.type==='house'?(b.level>=4?'villa':'home'):b.type});};
 $('buildToggle').onclick=()=>{const open=$('buildDock').hidden;$('buildDock').hidden=!open;$('buildToggle').setAttribute('aria-expanded',String(open));document.body.classList.toggle('build-open',open);};
 $('close').onclick=()=>select(null);$('pause').onclick=()=>{state.paused=!state.paused;updateUI()};
@@ -162,7 +184,7 @@ canvas.addEventListener('keydown',e=>{if(adventure.key(e))return;if(['ArrowLeft'
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();state.paused=true;$('renderError').hidden=false});
 addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>last=performance.now());
 function frame(now){
- const dt=Math.min((now-last)/1000,.25);last=now;state.tick(dt);if(!state.paused){worldTime+=dt;cycleElapsed+=dt;if(autoDay)sunHour=(sunHour+dt*24/180)%24;if(autoCycle&&cycleElapsed>=60){const names=Object.keys(seasonData);season=names[(names.indexOf(season)+1)%4];cycleElapsed=0;refreshClimate()}if(weatherChoice==='auto'&&weather!==currentAutoWeather())refreshClimate()}
+ const dt=document.hidden?0:Math.min((now-last)/1000,.25);last=now;state.tick(dt);if(!state.paused){worldTime+=dt;cycleElapsed+=dt;if(autoDay)sunHour=(sunHour+dt*24/180)%24;if(autoCycle&&cycleElapsed>=60){const names=Object.keys(seasonData);season=names[(names.indexOf(season)+1)%4];cycleElapsed=0;refreshClimate()}if(weatherChoice==='auto'&&weather!==currentAutoWeather())refreshClimate()}
  updateCamera(dt);const dusk=updateLight(dt),wind=updateWeather(dt);waterUniforms.uTime.value=worldTime;if(!adventure.room){sky.update(worldTime,sunHour,weather,wind);animateModel(island,worldTime,wind,dusk);animateLife(life,worldTime,wind,dusk,weather);animateFinesse(finesse,worldTime,wind,dusk,season,weather,life.actors);
  for(const model of built.values()){animateModel(model,worldTime,wind,dusk);animateCloth(model,worldTime,wind);animateBuildingFine(model,worldTime,wind);if(model.userData.growing){const age=worldTime-model.userData.growStart;const s=age<.6?.84+.16*(1-Math.pow(1-age/.6,3)):1;model.scale.setScalar(s);if(age>=.6)model.userData.growing=false}}
  for(let i=bursts.length-1;i>=0;i--){const b=bursts[i],age=worldTime-b.start;if(age>1.8){outdoor.remove(b.m);b.m.geometry.dispose();b.m.material.dispose();bursts.splice(i,1);continue}const a=b.m.geometry.attributes.position.array;for(let j=0;j<60;j++){const angle=j*2.399;a[j*3]=Math.cos(angle)*age*(.3+j%4*.18);a[j*3+1]=age*(2+j%3*.35)-age*age*.75;a[j*3+2]=Math.sin(angle)*age*(.3+j%4*.18)}b.m.geometry.attributes.position.needsUpdate=true;b.m.material.opacity=1-age/1.8}

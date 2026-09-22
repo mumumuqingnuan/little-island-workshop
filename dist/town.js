@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.min.js';
 import {material,seasonal,mesh,box,sphere,cylinder,cone,beam,group,roof,windowFrame,door,flowers,fence,tree,lamp,trimBox,compact,snow,animateModel,applySeason} from './models.js?v=9';
 import {cloth,lantern,stall,animateCloth} from './life.js?v=9';
-import {resident,animateResident,poseFishing,routePosition} from './residents.js?v=9';
+import {resident,animateResident,poseFishing,routePosition,strollResident} from './residents.js?v=9';
 
 export const places=[
  {id:'hall',name:'潮汐市政厅',kind:'hall',category:'钟楼广场',x:0,z:-10.5,scale:1.15,info:'钟楼、办事大厅、阅览区与办公桌。'},
@@ -131,7 +131,7 @@ export function createTown(parent){
 }
 export function animateTown(town,time,wind,night,season,weather){
  const dt=Math.min(.25,Math.max(0,time-(town.lastTime??time)));town.lastTime=time;animateCloth(town.root,time,wind);animateModel(town.leaves,time,wind,night);
- for(const npc of town.npcs){const path=npc.userData.route,react=npc.userData.resident.reactUntil>time;if(path&&!react){npc.userData.distance=(npc.userData.distance??npc.userData.phase)+dt*npc.userData.speed;const p=routePosition(path,npc.userData.distance);npc.position.set(p.x,.09,p.z);npc.rotation.y=p.angle;}animateResident(npc,time,!!path&&!react,wind);if(npc.userData.fishingSpot&&!react)poseFishing(npc,time);}
+ for(const npc of town.npcs){const path=npc.userData.route,react=npc.userData.resident.reactUntil>time;const walking=path?strollResident(npc,path,time,dt,npc.userData.speed):false;animateResident(npc,time,walking,wind);if(npc.userData.fishingSpot&&!react)poseFishing(npc,time);}
  for(const f of town.fishers){f.userData.fishingRod.rotation.x=Math.sin(time*.9)*.025;f.userData.bobber.position.y=-.88+Math.sin(time*2)*.045;}
  for(const [i,b] of town.boats.entries()){b.position.y=b.userData.base.y+Math.sin(time*.75+i)*.06;b.rotation.z=Math.sin(time*.6+i)*.035;}
 }

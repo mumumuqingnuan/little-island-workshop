@@ -4,11 +4,11 @@ import {resident,animateResident,poseFishing} from './residents.js?v=9';
 
 // These are game encounter settings, not a real fishing forecast.
 export const fishSpecies=[
- {id:'sardine',name:'沙丁鱼',rarity:'常见',spots:['pier','beach'],weight:20,size:[12,25],price:18,difficulty:.2,color:'#9dbbc3',shape:'slim'},
- {id:'mackerel',name:'鲭鱼',rarity:'常见',spots:['pier','rocks'],weight:16,size:[25,44],price:30,difficulty:.33,color:'#78a3ad',shape:'slim'},
- {id:'horse',name:'竹荚鱼',rarity:'常见',spots:['pier','beach'],weight:18,size:[16,34],price:24,difficulty:.27,color:'#b6c3b1',shape:'slim'},
- {id:'mullet',name:'鲻鱼',rarity:'常见',spots:['pier','beach'],weight:14,size:[23,51],price:32,difficulty:.33,color:'#9bada6'},
- {id:'whiting',name:'沙梭鱼',rarity:'常见',spots:['beach'],weight:20,size:[13,29],price:26,difficulty:.25,color:'#c5bf9e',shape:'slim'},
+ {id:'sardine',name:'沙丁鱼',rarity:'常见',spots:['pier','beach'],weight:20,size:[12,25],price:9,difficulty:.2,color:'#9dbbc3',shape:'slim'},
+ {id:'mackerel',name:'鲭鱼',rarity:'常见',spots:['pier','rocks'],weight:16,size:[25,44],price:15,difficulty:.33,color:'#78a3ad',shape:'slim'},
+ {id:'horse',name:'竹荚鱼',rarity:'常见',spots:['pier','beach'],weight:18,size:[16,34],price:12,difficulty:.27,color:'#b6c3b1',shape:'slim'},
+ {id:'mullet',name:'鲻鱼',rarity:'常见',spots:['pier','beach'],weight:14,size:[23,51],price:16,difficulty:.33,color:'#9bada6'},
+ {id:'whiting',name:'沙梭鱼',rarity:'常见',spots:['beach'],weight:20,size:[13,29],price:13,difficulty:.25,color:'#c5bf9e',shape:'slim'},
  {id:'bass',name:'海鲈鱼',rarity:'少见',spots:['pier','rocks'],weight:11,size:[35,78],price:68,difficulty:.54,color:'#99b4b3',weather:'rain'},
  {id:'blackbream',name:'黑鲷',rarity:'少见',spots:['pier','rocks'],weight:10,size:[22,48],price:58,difficulty:.47,color:'#7a9199',shape:'round'},
  {id:'redbream',name:'真鲷',rarity:'稀有',spots:['rocks','pier'],weight:5,size:[28,65],price:115,difficulty:.64,color:'#d19c9c',shape:'round',season:'spring'},
@@ -19,16 +19,29 @@ export const fishSpecies=[
  {id:'hairtail',name:'带鱼',rarity:'稀有',spots:['pier'],weight:5,size:[60,120],price:105,difficulty:.62,color:'#bfd0cf',shape:'ribbon',night:true},
  {id:'flying',name:'飞鱼',rarity:'稀有',spots:['pier','rocks'],weight:4,size:[19,36],price:100,difficulty:.57,color:'#91b8c5',shape:'flying',season:'summer'},
  {id:'cod',name:'鳕鱼',rarity:'稀有',spots:['rocks'],weight:4,size:[36,84],price:135,difficulty:.68,color:'#b3bdac',shape:'spotted',season:'winter'},
- {id:'tuna',name:'金枪鱼',rarity:'珍稀',spots:['pier'],weight:1,size:[74,146],price:260,difficulty:.83,color:'#7998ab',shape:'tuna'}
+ {id:'tuna',name:'金枪鱼',rarity:'珍稀',spots:['pier'],weight:1,size:[74,146],price:180,difficulty:.83,color:'#7998ab',shape:'tuna'},
+ {id:'scallop',name:'扇贝',rarity:'常见',spots:['beach'],weight:17,size:[6,15],price:10,difficulty:.12,color:'#e5bba1',shape:'shell'},
+ {id:'conch',name:'花纹海螺',rarity:'少见',spots:['beach','rocks'],weight:8,size:[9,23],price:28,difficulty:.26,color:'#e4c8a6',shape:'conch'},
+ {id:'pearl',name:'珍珠贝',rarity:'稀有',spots:['beach','pier'],weight:3,size:[8,19],price:85,difficulty:.42,color:'#c7b2d1',shape:'pearl',night:true},
+ {id:'starfish',name:'蓝海星',rarity:'少见',spots:['beach','rocks'],weight:7,size:[12,28],price:12,difficulty:.22,color:'#8cbbd0',shape:'star'},
+ {id:'seahorse',name:'珊瑚海马',rarity:'稀有',spots:['rocks'],weight:3,size:[8,21],price:65,difficulty:.38,color:'#e9bd83',shape:'seahorse',season:'summer'},
+ {id:'lobster',name:'锦绣龙虾',rarity:'稀有',spots:['rocks'],weight:3,size:[24,53],price:95,difficulty:.63,color:'#c98771',shape:'lobster',night:true},
+ {id:'turtle',name:'绿海龟',rarity:'珍稀',spots:['beach','pier'],weight:1.6,size:[45,110],price:95,difficulty:.6,color:'#92a87e',shape:'turtle',releaseOnly:true,season:'summer'},
+ {id:'hawksbill',name:'玳瑁',rarity:'珍稀',spots:['rocks'],weight:.9,size:[40,95],price:120,difficulty:.66,color:'#b7a16d',shape:'turtle',releaseOnly:true},
+ {id:'reefshark',name:'黑鳍礁鲨',rarity:'珍稀',spots:['rocks','pier'],weight:1.4,size:[85,170],price:155,difficulty:.8,color:'#809da7',shape:'shark'},
+ {id:'whaleshark',name:'鲸鲨',rarity:'传说',spots:['pier'],weight:.35,size:[280,550],price:250,difficulty:.88,color:'#7798b3',shape:'whaleshark',releaseOnly:true,season:'summer'},
+ {id:'manta',name:'星斑蝠鲼',rarity:'传说',spots:['rocks'],weight:.45,size:[160,360],price:220,difficulty:.84,color:'#8394b1',shape:'ray',releaseOnly:true,night:true},
+ {id:'nautilus',name:'鹦鹉螺',rarity:'珍稀',spots:['rocks'],weight:1,size:[12,25],price:135,difficulty:.56,color:'#deb994',shape:'conch',night:true}
+
 ];
 export const fishingSpots={pier:{name:'海风码头',x:2,z:17.7,angle:0},beach:{name:'月牙沙滩',x:-9.8,z:14.65,angle:0},rocks:{name:'白浪礁岸',x:13.99,z:11.46,angle:.3}};
 export function chooseFish(spot,climate,rng=Math.random){
  const eligible=fishSpecies.filter(f=>f.spots.includes(spot)),weights=eligible.map(f=>f.weight*(f.night?(climate.hour>=19||climate.hour<5?3:.25):1)*(f.weather===climate.weather?1.8:1)*(f.season===climate.season?2:1));let n=rng()*weights.reduce((a,b)=>a+b,0);for(let i=0;i<eligible.length;i++){n-=weights[i];if(n<0)return eligible[i];}return eligible.at(-1);
 }
 export class FishingGame{
- constructor(rng=Math.random){this.rng=rng;this.phase='idle';this.spot='pier';this.elapsed=0;this.held=false;this.collection=new Map();this.catch=null;this.message='抛下鱼钩，听一会儿海浪。';}
+ constructor(rng=Math.random,onChange=()=>{}){this.rng=rng;this.onChange=onChange;this.phase='idle';this.spot='pier';this.elapsed=0;this.held=false;this.collection=new Map();this.catch=null;this.message='抛下鱼钩，听一会儿海浪。';}
  open(spot){this.cancel();this.spot=spot;}
- cancel(){this.phase='idle';this.held=false;this.catch=null;this.message='抛下鱼钩，听一会儿海浪。';}
+ cancel(){if(this.catch)this.settle(false);this.phase='idle';this.held=false;this.catch=null;this.message='抛下鱼钩，听一会儿海浪。';}
  cast(climate){if(!['idle','escaped','caught'].includes(this.phase)||this.catch)return false;this.fish=chooseFish(this.spot,climate,this.rng);this.phase='casting';this.elapsed=0;this.wait=2.2+this.rng()*3.2;this.held=false;this.message='鱼线划过海面……';return true;}
  press(){if(this.phase==='bite'){this.phase='reel';this.elapsed=0;this.tension=.35;this.progress=.04;this.danger=0;this.slack=0;this.held=true;this.message='按住收线，松开缓一缓；别让张力进入红区。';return true;}if(this.phase==='reel'){this.held=true;return true;}return false;}
  release(){this.held=false;}
@@ -48,14 +61,19 @@ export class FishingGame{
    else if(this.elapsed>60)this.escape('这条鱼很有耐心，先歇一会儿再来吧。');
    else if(this.progress>=1){
     const size=Math.round(this.fish.size[0]+this.rng()*(this.fish.size[1]-this.fish.size[0]));this.catch={fish:this.fish,size,value:Math.round(this.fish.price*(.8+size/this.fish.size[1]*.5))};
-    const old=this.collection.get(this.fish.id)||{count:0,best:0};this.collection.set(this.fish.id,{count:old.count+1,best:Math.max(old.best,size)});this.phase='caught';this.held=false;this.message=`钓到了${this.fish.name}！${size} 厘米 · ${this.fish.rarity}`;
+    const old=this.collection.get(this.fish.id)||{count:0,best:0};this.catch.first=old.count===0;this.collection.set(this.fish.id,{count:old.count+1,best:Math.max(old.best,size)});this.phase='caught';this.held=false;this.message=`钓到了${this.fish.name}！${size} 厘米 · ${this.fish.rarity}${this.catch.first?' · 首次发现！':''}`;this.onChange();
    }
   }
  }
- settle(sell=false){if(!this.catch)return 0;const coins=sell?this.catch.value:0;this.catch=null;this.phase='idle';this.message=sell?`鱼获换到了 ${coins} 金币。`:'鱼儿回到海里，鱼获手册已经记下了这次相遇。';return coins;}
+ snapshot(){return {collection:[...this.collection],pending:this.catch?{id:this.catch.fish.id,size:this.catch.size,value:this.catch.value,spot:this.spot,first:!!this.catch.first}:null};}
+ restore(data){this.collection=new Map((data?.collection||[]).filter(([id])=>fishSpecies.some(f=>f.id===id)));const p=data?.pending,f=p&&fishSpecies.find(f=>f.id===p.id);if(f){this.spot=p.spot;this.fish=f;this.catch={fish:f,size:p.size,value:p.value,first:!!p.first};this.phase='caught';this.message='上次的海洋相遇还在这里，记得领取奖励。';}}
+ settle(sell=false){if(!this.catch)return 0;const c=this.catch,bonus=c.first?({常见:8,少见:15,稀有:30,珍稀:60,传说:100}[c.fish.rarity]||0):0;const coins=(sell?c.value:0)+bonus;this.catch=null;this.phase='idle';this.message=(sell?(c.fish.releaseOnly?'记录后送回大海，获得观察奖励':'海产换到了金币'):'送回大海，图鉴保留这次相遇')+` · +${coins} 金币${bonus?'（含首次发现奖励）':''}`;return coins;}
+
 }
 export function makeFish(parent,fish){
- const g=group(parent),shape=fish.shape,slim=['slim','ribbon','tuna'].includes(shape),sx=shape==='ribbon'?1.1:shape==='puffer'?.36:.65,sy=shape==='flat'?.075:slim?.17:shape==='puffer'?.33:.31,sz=shape==='flat'?.39:shape==='puffer'?.29:.2;
+ const g=group(parent),shape=fish.shape;
+ if(makeSeaCreature(g,fish)){compact(g);return g;}
+ const slim=['slim','ribbon','tuna'].includes(shape),sx=shape==='ribbon'?1.1:shape==='puffer'?.36:.65,sy=shape==='flat'?.075:slim?.17:shape==='puffer'?.33:.31,sz=shape==='flat'?.39:shape==='puffer'?.29:.2;
  sphere(g,0,0,0,sx,sy,sz,fish.color);sphere(g,-sx*.33,-sy*.32,sz*.28,sx*.66,sy*.52,sz*.74,'#dce0c9');
  const tail=mesh(g,new T.ConeGeometry(sy*1.25,.4,3),material(fish.color),sx+.12,0,0);tail.rotation.z=-Math.PI/2;tail.scale.z=.22;
  const fin=mesh(g,new T.ConeGeometry(.18,.26,3),material('#a9b8ac'),.1,sy*.9,0);fin.scale.z=.17;fin.rotation.z=-.4;
@@ -63,6 +81,35 @@ export function makeFish(parent,fish){
  if(['spotted','puffer'].includes(shape))for(let i=0;i<18;i++){const x=(i%6-2.5)*sx*.23,y=(Math.floor(i/6)-1)*sy*.4;for(const side of [-1,1])sphere(g,x,y,side*sz*.94,.024,.025,.01,'#78857a');}
  else for(let i=0;i<6;i++){const x=-sx*.25+i*sx*.16;beam(g,[x,sy*.7,sz*.55],[x+.055,-sy*.15,sz*.91],.007,'#819c9e');}
  compact(g);return g;
+}
+function makeSeaCreature(g,f){
+ const s=f.shape,c=f.color,eye=(x,y,z)=>sphere(g,x,y,z,.035,.04,.025,'#30434a');
+ if(s==='turtle'){
+  sphere(g,0,0,0,.52,.23,.38,c);sphere(g,0,-.09,0,.49,.12,.35,'#e2d4ab');sphere(g,-.58,-.03,0,.18,.13,.14,c);
+  for(const side of [-1,1]){const fl=sphere(g,-.22,-.1,side*.4,.28,.055,.15,c);fl.rotation.y=side*.55;sphere(g,.37,-.1,side*.32,.17,.055,.12,c);eye(-.64,.01,side*.12);}
+  for(let i=0;i<5;i++)sphere(g,(i-2)*.15,.225-Math.abs(i-2)*.025,0,.105,.024,.12,'#687d57');
+ }else if(s==='shell'||s==='pearl'){
+  sphere(g,0,-.04,0,.45,.09,.38,c);const lid=group(g,.3,0,0);lid.rotation.z=-.48;sphere(lid,-.3,.03,0,.45,.055,.38,c);
+  for(let i=0;i<9;i++){let z=(i-4)*.075;beam(lid,[0,.07,0],[-.6,.07,z],.012,'#f0dac0');}if(s==='pearl')sphere(g,-.14,.1,0,.16,.16,.16,'#f8ead7');
+ }else if(s==='conch'){
+  for(let i=0;i<16;i++){const a=i*.62,r=.035+i*.025; sphere(g,Math.cos(a)*r,Math.sin(a)*r,0,.05+i*.009,.05+i*.009,.07+i*.007,i%3?c:'#a7775f');}sphere(g,.38,-.13,.05,.22,.13,.15,'#f3dcb9');
+ }else if(s==='star'){
+  sphere(g,0,0,0,.16,.09,.16,c);for(let i=0;i<5;i++){const a=i*Math.PI*2/5;const arm=sphere(g,Math.sin(a)*.22,0,Math.cos(a)*.22,.09,.065,.32,c);arm.rotation.y=a;}
+ }else if(s==='shark'||s==='whaleshark'){
+  const large=s==='whaleshark';sphere(g,0,0,0,.85,large?.3:.22,.27,c);sphere(g,-.22,-.12,0,.6,.1,.24,'#dce1d5');
+  const fin=mesh(g,new T.ConeGeometry(.3,.5,3),material(c),.12,.33,0);fin.scale.z=.18;
+  for(const side of [-1,1]){const wing=mesh(g,new T.ConeGeometry(.23,.55,3),material(c),-.12,-.06,side*.33);wing.rotation.x=side*Math.PI/2;wing.scale.z=.22;eye(-.62,.065,side*.235);}
+  for(const side of [-1,1]){const tail=mesh(g,new T.ConeGeometry(.22,.47,3),material(c),.91,side*.18,0);tail.rotation.z=side*-.5;tail.scale.z=.22;}
+  if(large)for(let i=0;i<24;i++)sphere(g,(i%8-3.5)*.17,.24-Math.abs(i%8-3.5)*.014,(Math.floor(i/8)-1)*.13,.021,.016,.021,'#f3e9cc');
+ }else if(s==='ray'){
+  sphere(g,0,0,0,.42,.1,.32,c);for(const side of [-1,1]){const wing=sphere(g,.12,0,side*.4,.4,.035,.48,c);wing.rotation.y=side*.55;}beam(g,[.3,0,0],[1.2,-.03,0],.02,c);eye(-.28,.09,.13);eye(-.28,.09,-.13);
+ }else if(s==='seahorse'){
+  sphere(g,0,0,0,.16,.3,.1,c);sphere(g,-.1,.32,0,.17,.16,.1,c);sphere(g,-.28,.32,0,.16,.055,.055,c);eye(-.15,.38,.08);for(let i=0;i<14;i++){const a=i*.4; sphere(g,.08+Math.cos(a)*(.2-i*.01),-.31+Math.sin(a)*(.2-i*.01),0,.045,.05,.045,c);}
+ }else if(s==='lobster'){
+  sphere(g,0,0,0,.43,.13,.2,c);for(let i=0;i<5;i++)sphere(g,.18+i*.085,0,0,.08,.13-i*.015,.19-i*.019,c);
+  for(const side of [-1,1]){for(let i=0;i<4;i++)beam(g,[i*.11-.2,-.08,side*.12],[i*.13-.26,-.2,side*.4],.019,c);beam(g,[-.36,.08,side*.1],[-.95,.25,side*.27],.012,'#e2c193');eye(-.37,.14,side*.13);}
+ }else return false;
+ return true;
 }
 export function createFishingRig(parent){
  const root=group(parent);root.visible=false;const pole=group(root,0,.75,.3);beam(pole,[0,0,0],[0,1.28,2.4],.019,'#987c55');cylinder(pole,0,-.11,0,.029,.031,.45,'#706350',10);

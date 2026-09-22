@@ -5,8 +5,8 @@ import {FishingGame,fishSpecies,fishingSpots,createFishingRig,animateFishingRig}
 import {greetResident} from './residents.js?v=9';
 import {applySeason} from './models.js?v=9';
 
-export function createAdventure({scene,outdoor,camera,state,goTo,captureView,notify,getClimate,getTime,setIndoor,clearSelection}){
- const $=id=>document.getElementById(id),town=createTown(outdoor),game=new FishingGame(),rig=createFishingRig(outdoor);
+export function createAdventure({scene,outdoor,camera,state,goTo,captureView,notify,getClimate,getTime,setIndoor,clearSelection,onProgress=()=>{}}){
+ const $=id=>document.getElementById(id),town=createTown(outdoor),game=new FishingGame(Math.random,()=>onProgress()),rig=createFishingRig(outdoor);
  let room=null,selected=null,fishingOpen=false,returnView=null,lastPhase='',lastUi=-1;
  const roomCache=new Map(); // Keep only two recently visited rooms to bound GPU memory.
  const markers=[];for(const p of places){const el=document.createElement('button');el.type='button';el.className='place-marker';el.textContent=p.name;el.setAttribute('aria-label',`前往${p.name}`);el.onclick=()=>visit(p);$('placeMarkers').appendChild(el);markers.push({el,p});}
@@ -16,7 +16,7 @@ export function createAdventure({scene,outdoor,camera,state,goTo,captureView,not
  $('placeEnter').onclick=()=>{if(!selected)return;if(selected.kind==='fishing')startFishing(selected.spot);else enter(selected);};
  $('roomExit').onclick=exit;$('fishClose').onclick=stopFishing;
  $('fishBookOpen').onclick=openBook;$('fishBookClose').onclick=()=>$('fishBook').close();$('fishBookButton').onclick=openBook;
- $('fishSell').onclick=()=>{state.coins+=game.settle(true);renderFishing();};$('fishRelease').onclick=()=>{game.settle(false);renderFishing();};
+ $('fishSell').onclick=()=>{state.coins+=game.settle(true);renderFishing();onProgress();};$('fishRelease').onclick=()=>{state.coins+=game.settle(false);renderFishing();onProgress();};
  const action=$('fishAction');
  function fishingAction(){if(state.paused)return;if(game.phase==='bite'||game.phase==='reel')game.press();else game.cast(getClimate());renderFishing();}
  action.addEventListener('pointerdown',e=>{e.preventDefault();action.setPointerCapture?.(e.pointerId);fishingAction();});
@@ -34,16 +34,16 @@ export function createAdventure({scene,outdoor,camera,state,goTo,captureView,not
  function startFishing(spot='pier'){
   if(room)exit();closePanels();game.open(spot);fishingOpen=true;lastPhase='';rig.root.visible=true;document.body.classList.add('fishing');$('fishingPanel').hidden=false;const s=fishingSpots[spot];goTo([s.x,.3,s.z+1.3],innerWidth<=760?1.6:1.95,.45,.54);$('fishSpot').textContent=s.name;renderFishing();
  }
- function stopFishing(){if(!fishingOpen)return;if(game.catch)game.settle(false);game.cancel();fishingOpen=false;rig.root.visible=false;document.body.classList.remove('fishing');$('fishingPanel').hidden=true;}
+ function stopFishing(){if(!fishingOpen)return;if(game.catch){state.coins+=game.settle(false);onProgress();}game.cancel();fishingOpen=false;rig.root.visible=false;document.body.classList.remove('fishing');$('fishingPanel').hidden=true;}
  function openBook(){game.release();renderBook();$('fishBook').showModal();}
  function renderBook(){
   $('fishBookCount').textContent=`已遇见 ${game.collection.size} / ${fishSpecies.length} 种`;$('fishBookList').innerHTML='';
-  for(const f of fishSpecies){const record=game.collection.get(f.id),el=document.createElement('article');el.className='fish-entry'+(record?' discovered':'');const hint=[f.spots.map(s=>fishingSpots[s].name).join(' · '),f.night?'夜间更容易遇到':f.season?({spring:'春',summer:'夏',autumn:'秋',winter:'冬'}[f.season]+'季更容易遇到'):f.weather==='rain'?'雨天更容易遇到':'全天可遇到'].join(' / ');el.innerHTML=`<div><strong>${f.name}</strong><small>${f.rarity}</small></div><p>${record?`${record.count} 次 · 最大 ${record.best} 厘米`:'尚未钓到'}</p><small>${hint}</small>`;$('fishBookList').appendChild(el);}
+  for(const f of fishSpecies){const record=game.collection.get(f.id),el=document.createElement('article');el.className='fish-entry'+(record?' discovered':'');const hint=[f.spots.map(s=>fishingSpots[s].name).join(' · '),f.night?'夜间更容易遇到':f.season?({spring:'春',summer:'夏',autumn:'秋',winter:'冬'}[f.season]+'季更容易遇到'):f.weather==='rain'?'雨天更容易遇到':'全天可遇到'].join(' / ');el.innerHTML=`<div><strong>${f.name}</strong><small>${f.rarity}${f.releaseOnly?' · 海洋观察':''}</small></div><p>${record?`${record.count} 次 · 最大 ${record.best} 厘米`:'尚未遇见'}</p><small>${hint}</small>`;$('fishBookList').appendChild(el);}
  }
  function renderFishing(){
   const phase=game.phase,busy=['casting','waiting'].includes(phase);$('fishMessage').textContent=state.paused?'游戏已暂停，继续后再钓鱼。':game.message;$('fishAction').textContent=phase==='bite'?'咬钩了 · 立刻提竿':phase==='reel'?(game.held?'正在收线 · 松开缓一缓':'按住收线'):busy?'等待咬钩…':phase==='escaped'?'再抛一次':'抛竿';$('fishAction').disabled=state.paused||busy||phase==='caught';$('fishAction').classList.toggle('bite',phase==='bite');$('fishMeters').hidden=phase!=='reel';$('fishActions').hidden=phase==='caught';$('fishResult').hidden=phase!=='caught';
   $('tensionFill').style.width=((game.tension||0)*100)+'%';$('tensionFill').style.background=(game.tension||0)>.85?'#c57b65':'#668f88';$('catchFill').style.width=((game.progress||0)*100)+'%';$('tensionValue').textContent=Math.round((game.tension||0)*100)+'%';$('catchValue').textContent=Math.round((game.progress||0)*100)+'%';
-  $('fishCaught').textContent=game.catch?`${game.catch.fish.name} · ${game.catch.size} 厘米`:'';$('fishSell').textContent=game.catch?`售出 · +${game.catch.value} 金币`:'售出';$('fishCollection').textContent=`鱼获手册 ${game.collection.size} / ${fishSpecies.length}`;
+  $('fishCaught').textContent=game.catch?`${game.catch.fish.name} · ${game.catch.size} 厘米`:'';$('fishSell').textContent=game.catch?`${game.catch.fish.releaseOnly?'观察后放归':'售出'} · +${game.catch.value} 金币`:'售出';$('fishRelease').textContent=game.catch?.first?'放归 · 领取发现奖励':'放归';$('fishCollection').textContent=`海产图鉴 ${game.collection.size} / ${fishSpecies.length}`;
  }
  function activateFurniture(item){if(!room)return;const d=item.userData.furniture;walkRoom(room,item.position.x,item.position.z);room.pending=item;$('roomInfo').textContent=`走向${d.label}……`;}
  function handleRoomRay(raycaster){if(!room)return;const hits=raycaster.intersectObjects([room.floor,...room.items,...room.npcs],true);for(const hit of hits){let node=hit.object;while(node&&!node.userData.floor&&!node.userData.furniture&&!node.userData.resident)node=node.parent;if(!node)continue;if(node.userData.floor){walkRoom(room,hit.point.x,hit.point.z);room.pending=null;$('roomInfo').textContent='沿着空地慢慢走。';}else if(node.userData.resident){node.rotation.y=Math.atan2(camera.position.x-node.position.x,camera.position.z-node.position.z);const text=greetResident(node,getTime());$('roomInfo').textContent=text;}else activateFurniture(node);break;}}

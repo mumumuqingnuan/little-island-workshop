@@ -6,13 +6,13 @@ export const catalog={
 };
 export const slots=[[-3.3,-2.8],[0,-3.2],[-3.3,2.6],[0,2.8],[-5.1,-.05],[-1.7,-.1],[1.7,-.05],[3.5,2.4]];
 export class GameState{
- constructor(){this.coins=180;this.paused=false;this.buildings=[{type:'house',slot:0,level:2},{type:'mill',slot:1,level:1},{type:'garden',slot:2,level:2}];this.selected=null;}
+ constructor(){this.coins=120;this.paused=false;this.buildings=[{type:'house',slot:0,level:2},{type:'mill',slot:1,level:1},{type:'garden',slot:2,level:2}];this.selected=null;this.gatherCooldown=0;}
  get income(){return 2+this.buildings.reduce((s,b)=>s+catalog[b.type].income*b.level,0)}
  canBuild(type){const t=catalog[type];return !!t&&!this.paused&&this.coins>=t.cost&&this.buildings.length<slots.length&&!(type!=='lighthouse'&&this.buildings.length===7&&!this.buildings.some(b=>b.type==='lighthouse'))&&!(type==='lighthouse'&&(this.buildings.length<3||this.buildings.some(b=>b.type===type)))}
  build(type){if(!this.canBuild(type))return null;const slot=slots.findIndex((_,i)=>!this.buildings.some(b=>b.slot===i));const b={type,slot,level:1};this.coins-=catalog[type].cost;this.buildings.push(b);this.selected=b;return b}
  upgradeCost(b){return b?Math.ceil(catalog[b.type].cost*.7*b.level):0}
  canUpgrade(b){return !!b&&!this.paused&&b.level<5&&this.coins>=this.upgradeCost(b)}
  upgrade(b){if(!this.canUpgrade(b))return false;this.coins-=this.upgradeCost(b);b.level++;return true}
- tick(dt){if(!this.paused)this.coins+=this.income*dt}
- gather(){if(!this.paused)this.coins+=12}
+ tick(dt){if(!this.paused&&Number.isFinite(dt)&&dt>0){this.coins+=this.income*dt/60;this.gatherCooldown=Math.max(0,this.gatherCooldown-dt)}}
+ gather(){if(this.paused||this.gatherCooldown>0)return 0;this.coins+=3;this.gatherCooldown=8;return 3}
 }
